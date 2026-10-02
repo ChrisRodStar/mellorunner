@@ -1,0 +1,60 @@
+<svg width="1200" height="320" viewBox="0 0 1200 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FAF8F3"/>
+    </linearGradient>
+
+    <radialGradient id="goldGlowLight" cx="15%" cy="50%" r="45%">
+      <stop offset="0%" stop-color="#F5C77E" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#F5C77E" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="iconBgLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F7F3EA"/>
+    </linearGradient>
+
+    <linearGradient id="goldAccentLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C68D36"/>
+      <stop offset="100%" stop-color="#DDA64F"/>
+    </linearGradient>
+
+    <clipPath id="squircleClipLight">
+      <rect width="170" height="170" rx="40"/>
+    </clipPath>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1200" height="320" rx="24" fill="url(#bgLight)"/>
+  <rect width="1200" height="320" rx="24" fill="url(#goldGlowLight)"/>
+  <rect x="0.75" y="0.75" width="1198.5" height="318.5" rx="23.25" stroke="#E8E4DB" stroke-width="1.5"/>
+
+  <!-- Mascot Container -->
+  <g transform="translate(65, 75)">
+    <rect width="170" height="170" rx="40" fill="url(#iconBgLight)" stroke="#E5DEC9" stroke-width="1.5"/>
+    <g clip-path="url(#squircleClipLight)">
+      <image href="data:image/png;base64,{{LOGO_BASE64}}" x="9" y="9" width="152" height="152"/>
+    </g>
+  </g>
+
+  <!-- Typography Content -->
+  <g transform="translate(270, 80)">
+    <!-- Clean Metadata Eyebrow (No tacky pills) -->
+    <text x="0" y="16" fill="#6B7280" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif" font-size="11.5" font-weight="600" letter-spacing="1.2">IN DEVELOPMENT &#160;·&#160; SWIFT 6.4 &#160;·&#160; iOS 27 + macOS 27</text>
+
+    <!-- Main Title -->
+    <text x="0" y="70" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Nunito', 'Segoe UI', sans-serif" font-size="48" font-weight="800" letter-spacing="-0.5">
+      <tspan fill="#111827">Mello</tspan><tspan fill="url(#goldAccentLight)">Runner</tspan>
+    </text>
+
+    <!-- Subtitle / Positioning -->
+    <text x="0" y="106" fill="#4B5563" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif" font-size="16.5" font-weight="400">
+      An independent source-runner project for Melloku.
+    </text>
+
+    <text x="0" y="160" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="500" fill="#6B7280">
+      <tspan fill="#8C590F">Module inspection</tspan> &#160;·&#160; Independent fixtures &#160;·&#160; Runtime in development
+    </text>
+  </g>
+</svg>
