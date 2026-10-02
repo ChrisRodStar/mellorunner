@@ -113,9 +113,9 @@ public struct PostcardReader {
     public mutating func readBool() throws(PostcardError) -> Bool {
         let byte = try readU8()
         switch byte {
-        case 0x00: return false
-        case 0x01: return true
-        default: throw PostcardError.invalidBooleanDiscriminant(byte)
+            case 0x00: return false
+            case 0x01: return true
+            default: throw PostcardError.invalidBooleanDiscriminant(byte)
         }
     }
 
@@ -123,9 +123,9 @@ public struct PostcardReader {
     public mutating func readOptionTag() throws(PostcardError) -> Bool {
         let byte = try readU8()
         switch byte {
-        case 0x00: return false
-        case 0x01: return true
-        default: throw PostcardError.invalidOptionDiscriminant(byte)
+            case 0x00: return false
+            case 0x01: return true
+            default: throw PostcardError.invalidOptionDiscriminant(byte)
         }
     }
 

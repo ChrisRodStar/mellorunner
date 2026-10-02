@@ -21,7 +21,8 @@ public struct ModuleHeader: Equatable, Sendable, Codable {
         guard header[0..<4].elementsEqual([0x00, 0x61, 0x73, 0x6d]) else {
             throw ModuleInspectionError.invalidMagic
         }
-        let version = UInt32(header[4]) | UInt32(header[5]) << 8
+        let version =
+            UInt32(header[4]) | UInt32(header[5]) << 8
             | UInt32(header[6]) << 16 | UInt32(header[7]) << 24
         guard version == 1 else { throw ModuleInspectionError.unsupportedVersion(version) }
         binaryVersion = version

@@ -1,12 +1,12 @@
 import Foundation
-import os
 import Testing
-@testable import MelloRunner
 import WasmKit
+import os
+
+@testable import MelloRunner
 
 @Suite("StandardImports Tests")
 struct StandardImportsTests {
-
     @Test("Direct date and time standard operations")
     func dateTimeOperations() {
         let imports = StandardImports()

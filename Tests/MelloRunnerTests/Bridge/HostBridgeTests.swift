@@ -1,11 +1,11 @@
 import Foundation
 import Testing
-@testable import MelloRunner
 import WasmKit
+
+@testable import MelloRunner
 
 @Suite("HostBridge Tests")
 struct HostBridgeTests {
-
     private func loadAnswerFixture() throws -> Data {
         let url = try #require(
             Bundle.module.url(forResource: "answer", withExtension: "wasm", subdirectory: "Fixtures")

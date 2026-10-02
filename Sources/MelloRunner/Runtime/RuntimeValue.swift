@@ -9,10 +9,10 @@ public enum RuntimeValue: Equatable, Sendable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .i32(let value): "i32(\(value))"
-        case .i64(let value): "i64(\(value))"
-        case .f32(let value): "f32(\(value))"
-        case .f64(let value): "f64(\(value))"
+            case .i32(let value): "i32(\(value))"
+            case .i64(let value): "i64(\(value))"
+            case .f32(let value): "f32(\(value))"
+            case .f64(let value): "f64(\(value))"
         }
     }
 

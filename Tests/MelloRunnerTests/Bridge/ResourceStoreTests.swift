@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 import MelloRunner
+import Testing
 
 @Suite("ResourceStore Tests")
 struct ResourceStoreTests {
-
     @Test("Store and fetch Data returns expected content and descriptors")
     func storeAndFetchData() {
         let store = ResourceStore()

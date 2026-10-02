@@ -1,6 +1,6 @@
 import Foundation
-import Testing
 import MelloRunner
+import Testing
 
 @Suite struct PostcardTests {
     // MARK: - VarInt & ZigZag Tests
@@ -225,8 +225,11 @@ import MelloRunner
 
     @Test func `Codable top-level array of structs`() throws {
         let items = [
-            MangaPayload(id: "1", title: "One", chapterCount: 10, score: 7.0, isCompleted: true, author: "A", tags: ["T1"]),
-            MangaPayload(id: "2", title: "Two", chapterCount: 20, score: 8.0, isCompleted: false, author: nil, tags: ["T2", "T3"])
+            MangaPayload(
+                id: "1", title: "One", chapterCount: 10, score: 7.0, isCompleted: true, author: "A", tags: ["T1"]),
+            MangaPayload(
+                id: "2", title: "Two", chapterCount: 20, score: 8.0, isCompleted: false, author: nil,
+                tags: ["T2", "T3"]),
         ]
 
         let encoder = PostcardEncoder()
@@ -285,4 +288,3 @@ import MelloRunner
         #expect(try dec.decode([UInt8].self, from: Data([0x03, 10, 20, 30])) == [10, 20, 30])
     }
 }
-

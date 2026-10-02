@@ -3,7 +3,6 @@ import WasmKit
 
 /// Utilities for decoding guest return pointers, extracting Postcard payloads, and releasing guest memory.
 public enum ResultReader {
-
     /// Reads and returns the raw Postcard payload from a guest return pointer, freeing the guest buffer upon extraction.
     ///
     /// - Parameters:
@@ -20,15 +19,15 @@ public enum ResultReader {
         // 1. Handle negative error codes
         if result < 0 {
             switch result {
-            case -2: throw BridgeError.unimplemented
-            case -3: throw BridgeError.networkError
-            case -4: throw BridgeError.htmlError
-            case -5: throw BridgeError.jsError
-            case -6: throw BridgeError.canvasError
-            case -7: throw BridgeError.utf8Error
-            case -8: throw BridgeError.jsonParseError
-            case -9: throw BridgeError.deserializeError
-            default: throw BridgeError.unknownGuestErrorCode(result)
+                case -2: throw BridgeError.unimplemented
+                case -3: throw BridgeError.networkError
+                case -4: throw BridgeError.htmlError
+                case -5: throw BridgeError.jsError
+                case -6: throw BridgeError.canvasError
+                case -7: throw BridgeError.utf8Error
+                case -8: throw BridgeError.jsonParseError
+                case -9: throw BridgeError.deserializeError
+                default: throw BridgeError.unknownGuestErrorCode(result)
             }
         }
 

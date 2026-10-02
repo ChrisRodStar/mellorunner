@@ -54,21 +54,23 @@ public final class StandardImports: @unchecked Sendable {
         imports.define(
             module: "std",
             name: "read_buffer",
-            Function(store: store, type: FunctionType(parameters: [.i32, .i32, .i32], results: [.i32])) { [weak self] caller, args in
+            Function(store: store, type: FunctionType(parameters: [.i32, .i32, .i32], results: [.i32])) {
+                [weak self] caller, args in
                 guard let self else { return [.i32(UInt32(bitPattern: -1))] }
                 let descriptor = Int32(bitPattern: args[0].i32)
                 let bufferOffset = UInt(args[1].i32)
                 let size = Int(args[2].i32)
 
                 guard let memory = self.getMemory(from: caller) else {
-                    return [.i32(UInt32(bitPattern: -3))] // failedMemoryWrite
+                    return [.i32(UInt32(bitPattern: -3))]  // failedMemoryWrite
                 }
 
                 guard bufferOffset + UInt(size) <= memory.byteCount else {
-                    return [.i32(UInt32(bitPattern: -3))] // failedMemoryWrite out of bounds
+                    return [.i32(UInt32(bitPattern: -3))]  // failedMemoryWrite out of bounds
                 }
 
-                let resultCode: Int32 = memory.withUnsafeMutableBufferPointer(offset: bufferOffset, count: size) { destBuffer in
+                let resultCode: Int32 = memory.withUnsafeMutableBufferPointer(offset: bufferOffset, count: size) {
+                    destBuffer in
                     self.resourceStore.copyBytes(from: descriptor, to: destBuffer, count: size)
                 }
                 return [.i32(UInt32(bitPattern: resultCode))]
@@ -144,7 +146,8 @@ public final class StandardImports: @unchecked Sendable {
         imports.define(
             module: "env",
             name: "print",
-            Function(store: store, type: FunctionType(parameters: [.i32, .i32], results: [])) { [weak self] caller, args in
+            Function(store: store, type: FunctionType(parameters: [.i32, .i32], results: [])) {
+                [weak self] caller, args in
                 guard let self, let memory = self.getMemory(from: caller) else { return [] }
                 if let message = self.readString(from: memory, offset: args[0].i32, length: args[1].i32) {
                     if let handler = self.printHandler {
@@ -185,7 +188,8 @@ public final class StandardImports: @unchecked Sendable {
                 guard length >= 8, pointer + UInt(length) <= memory.byteCount else { return [] }
 
                 let payloadLength = Int(length - 8)
-                let partialData: Data = memory.withUnsafeBufferPointer(offset: pointer + 8, count: payloadLength) { raw in
+                let partialData: Data = memory.withUnsafeBufferPointer(offset: pointer + 8, count: payloadLength) {
+                    raw in
                     Data(raw)
                 }
                 self.partialResultHandler?(partialData)

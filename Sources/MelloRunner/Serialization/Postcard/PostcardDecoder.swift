@@ -61,7 +61,8 @@ private struct _PostcardDecoder: Decoder {
             count = try storage.reader.readSequenceLength()
         } catch {
             throw DecodingError.dataCorrupted(
-                DecodingError.Context(codingPath: codingPath, debugDescription: "Failed to read sequence length: \(error)")
+                DecodingError.Context(
+                    codingPath: codingPath, debugDescription: "Failed to read sequence length: \(error)")
             )
         }
         return _PostcardUnkeyedDecoding(storage: storage, codingPath: codingPath, count: count)
@@ -392,7 +393,9 @@ private struct _PostcardUnkeyedDecoding: UnkeyedDecodingContainer {
         return try T(from: decoder)
     }
 
-    mutating func nestedContainer<NestedKey: CodingKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> {
+    mutating func nestedContainer<NestedKey: CodingKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<
+        NestedKey
+    > {
         let indexKey = IndexKey(intValue: currentIndex)!
         var path = codingPath
         path.append(indexKey)

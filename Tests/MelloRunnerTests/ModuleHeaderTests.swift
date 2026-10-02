@@ -1,12 +1,13 @@
 import Foundation
-import Testing
 import MelloRunner
+import Testing
 
 @Suite struct ModuleHeaderTests {
     private let header = Data([0, 97, 115, 109, 1, 0, 0, 0])
 
     @Test func `Inspect an independently generated module`() throws {
-        let url = try #require(Bundle.module.url(forResource: "answer", withExtension: "wasm", subdirectory: "Fixtures"))
+        let url = try #require(
+            Bundle.module.url(forResource: "answer", withExtension: "wasm", subdirectory: "Fixtures"))
         let bytes = try Data(contentsOf: url)
         let result = try ModuleHeader(data: bytes)
         #expect(result.binaryVersion == 1)

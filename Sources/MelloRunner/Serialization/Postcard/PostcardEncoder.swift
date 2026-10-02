@@ -386,12 +386,15 @@ private struct _PostcardUnkeyedEncoding: UnkeyedEncodingContainer {
         staging.count += 1
     }
 
-    mutating func nestedContainer<NestedKey: CodingKey>(keyedBy keyType: NestedKey.Type) -> KeyedEncodingContainer<NestedKey> {
+    mutating func nestedContainer<NestedKey: CodingKey>(keyedBy keyType: NestedKey.Type) -> KeyedEncodingContainer<
+        NestedKey
+    > {
         let indexKey = IndexKey(intValue: staging.count)!
         var path = codingPath
         path.append(indexKey)
         staging.count += 1
-        return KeyedEncodingContainer(_PostcardKeyedEncoding<NestedKey>(storage: staging.elementsStorage, codingPath: path))
+        return KeyedEncodingContainer(
+            _PostcardKeyedEncoding<NestedKey>(storage: staging.elementsStorage, codingPath: path))
     }
 
     mutating func nestedUnkeyedContainer() -> UnkeyedEncodingContainer {
