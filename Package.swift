@@ -7,8 +7,16 @@ let package = Package(
     products: [
         .library(name: "MelloRunner", targets: ["MelloRunner"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/swiftwasm/WasmKit.git", from: "0.4.1")
+    ],
     targets: [
-        .target(name: "MelloRunner"),
+        .target(
+            name: "MelloRunner",
+            dependencies: [
+                .product(name: "WasmKit", package: "WasmKit")
+            ]
+        ),
         .testTarget(name: "MelloRunnerTests", dependencies: ["MelloRunner"], resources: [.copy("Fixtures")])
     ],
     swiftLanguageModes: [.v6]
