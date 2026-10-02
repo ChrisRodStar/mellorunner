@@ -8,13 +8,15 @@ let package = Package(
         .library(name: "MelloRunner", targets: ["MelloRunner"])
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftwasm/WasmKit.git", from: "0.4.1")
+        .package(url: "https://github.com/swiftwasm/WasmKit.git", from: "0.4.1"),
+        .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.10.1")
     ],
     targets: [
         .target(
             name: "MelloRunner",
             dependencies: [
-                .product(name: "WasmKit", package: "WasmKit")
+                .product(name: "WasmKit", package: "WasmKit"),
+                .product(name: "SwiftSoup", package: "SwiftSoup")
             ]
         ),
         .testTarget(name: "MelloRunnerTests", dependencies: ["MelloRunner"], resources: [.copy("Fixtures")])

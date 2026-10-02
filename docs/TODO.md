@@ -49,12 +49,14 @@
   - All 59 tests in 8 suites pass in 0.043s with zero swift-format lint warnings.
   - Run head-to-head benchmark and record results in [`Benchmarks/Results/milestone-5.md`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Benchmarks/Results/milestone-5.md).
 
-- [ ] **Milestone 6: Host services integration (`Host/`)**
-  - `Host/Network`: Injected HTTP transport contract (`URLRequest` execution, bounded concurrency, status/header validation).
-  - `Host/HTML`: DOM parsing and querying backend for scraping HTML responses.
-  - `Host/Settings`: Namespaced key-value storage contract for source configuration.
-  - `Host/JavaScript` & `Host/Browser`: Isolated JavaScriptCore context evaluation and WebKit cookies.
-  - Execute head-to-head benchmark and record results in `Benchmarks/Results/milestone-6.md`.
+- [x] **Milestone 6: Host services integration (`Host/`)**
+  - `Host/Network`: Protocol-driven HTTP transport (`HTTPTransport`) supporting [`URLSessionTransport.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Network/URLSessionTransport.swift) and deterministic [`MockHTTPTransport.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Network/MockHTTPTransport.swift); token-bucket pacing in [`RateLimiter.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Network/RateLimiter.swift); full WasmKit `net.*` imports in [`NetworkImports.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Network/NetworkImports.swift).
+  - `Host/HTML`: Complete DOM parsing, querying, traversal, and mutation module via `SwiftSoup` in [`HTMLImports.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/HTML/HTMLImports.swift) (39 functions covering `parse`, `select`, `attr`, `text`, `children`, and kind identification).
+  - `Host/Settings`: Thread-safe settings store protocol [`SettingsStore.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Settings/SettingsStore.swift) with [`InMemorySettingsStore.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Settings/InMemorySettingsStore.swift) (unfair lock) and [`UserDefaultsSettingsStore.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Settings/UserDefaultsSettingsStore.swift); Postcard-encoded `defaults.*` imports in [`DefaultsImports.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Settings/DefaultsImports.swift).
+  - `Host/JavaScript`: Isolated JavaScriptCore evaluation actor in [`IsolatedJSContext.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/JavaScript/IsolatedJSContext.swift); HTTP cookie model in [`Cookie.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Models/Cookie.swift); `js.*` host imports in [`JavaScriptImports.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/JavaScript/JavaScriptImports.swift).
+  - Unified [`HostBridge.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Bridge/HostBridge.swift) automatically registering all host modules into WasmKit with composable `register(into:store:)` hooks.
+  - Comprehensive unit test suites (76 tests in 12 suites pass in 0.072s with zero swift-format warnings).
+  - Executed head-to-head release benchmark with zero regressions and recorded results in [`Benchmarks/Results/milestone-6.md`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Benchmarks/Results/milestone-6.md).
 
 - [ ] **Milestone 7: Public source session API (`Sources/`)**
   - Package loader for `.wasm` binaries + `source.json` manifests.

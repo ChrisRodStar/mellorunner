@@ -22,11 +22,12 @@ public final class StandardImports: @unchecked Sendable {
 
     /// Generates WasmKit `Imports` for both the `std` and `env` namespaces.
     ///
-    /// - Parameter store: The `WasmKit.Store` into which the functions will be allocated.
-    /// - Returns: A populated `Imports` structure ready for module instantiation.
-    public func makeImports(store: Store) -> Imports {
-        var imports = Imports()
-
+    /// Registers standard functions into the provided `Imports` instance.
+    ///
+    /// - Parameters:
+    ///   - imports: The `Imports` instance to register functions into.
+    ///   - store: The `WasmKit.Store` into which the functions will be allocated.
+    public func register(into imports: inout Imports, store: Store) {
         // MARK: - "std" Namespace
         // 1. std.destroy(descriptor: i32)
         imports.define(
@@ -196,7 +197,12 @@ public final class StandardImports: @unchecked Sendable {
                 return []
             }
         )
+    }
 
+    /// Generates WasmKit `Imports` for both the `std` and `env` namespaces.
+    public func makeImports(store: Store) -> Imports {
+        var imports = Imports()
+        register(into: &imports, store: store)
         return imports
     }
 

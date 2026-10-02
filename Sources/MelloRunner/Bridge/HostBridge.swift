@@ -7,6 +7,10 @@ public actor HostBridge {
     public let session: ExecutionSession
     public nonisolated let resourceStore: ResourceStore
     public nonisolated let standardImports: StandardImports
+    public nonisolated let networkImports: NetworkImports
+    public nonisolated let htmlImports: HTMLImports
+    public nonisolated let defaultsImports: DefaultsImports
+    public nonisolated let javascriptImports: JavaScriptImports
     public nonisolated let decoder: PostcardDecoder
 
     public init(
@@ -14,6 +18,10 @@ public actor HostBridge {
         engine: RuntimeEngine = .shared,
         maximumBytes: Int = 64 * 1024 * 1024,
         resourceStore: ResourceStore = ResourceStore(),
+        transport: any HTTPTransport = URLSessionTransport(),
+        rateLimiter: RateLimiter = RateLimiter(),
+        settingsStore: any SettingsStore = InMemorySettingsStore(),
+        settingsNamespace: String = "",
         decoder: PostcardDecoder = PostcardDecoder(),
         printHandler: (@Sendable (String) -> Void)? = nil,
         partialResultHandler: (@Sendable (Data) -> Void)? = nil,
@@ -21,19 +29,50 @@ public actor HostBridge {
     ) throws(RuntimeError) {
         self.resourceStore = resourceStore
         self.decoder = decoder
-        let imports = StandardImports(
+
+        let std = StandardImports(
             resourceStore: resourceStore,
             printHandler: printHandler,
             partialResultHandler: partialResultHandler
         )
-        self.standardImports = imports
+        self.standardImports = std
+
+        let net = NetworkImports(
+            resourceStore: resourceStore,
+            transport: transport,
+            rateLimiter: rateLimiter
+        )
+        self.networkImports = net
+
+        let html = HTMLImports(
+            resourceStore: resourceStore
+        )
+        self.htmlImports = html
+
+        let defaults = DefaultsImports(
+            resourceStore: resourceStore,
+            settingsStore: settingsStore,
+            namespace: settingsNamespace
+        )
+        self.defaultsImports = defaults
+
+        let js = JavaScriptImports(
+            resourceStore: resourceStore,
+            printHandler: printHandler
+        )
+        self.javascriptImports = js
 
         self.session = try ExecutionSession(
             data: wasmBytes,
             engine: engine,
             maximumBytes: maximumBytes,
             makeImports: { store in
-                var wasmImports = imports.makeImports(store: store)
+                var wasmImports = Imports()
+                std.register(into: &wasmImports, store: store)
+                net.register(into: &wasmImports, store: store)
+                html.register(into: &wasmImports, store: store)
+                defaults.register(into: &wasmImports, store: store)
+                js.register(into: &wasmImports, store: store)
                 additionalImports?(store, &wasmImports)
                 return wasmImports
             }
