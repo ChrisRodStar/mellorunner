@@ -1,4 +1,5 @@
 import Foundation
+import WasmKit
 
 /// Coordinates isolated, exclusive execution of a WebAssembly module instance.
 ///
@@ -16,10 +17,12 @@ public actor ExecutionSession {
     ///   - data: The binary bytes of the WebAssembly module.
     ///   - engine: The runtime engine to associate with this session. Defaults to `.shared`.
     ///   - maximumBytes: Maximum allowed module size in bytes. Defaults to 64MB.
+    ///   - makeImports: Optional closure providing custom host imports during module instantiation.
     public init(
         data: Data,
         engine: RuntimeEngine = .shared,
-        maximumBytes: Int = 64 * 1024 * 1024
+        maximumBytes: Int = 64 * 1024 * 1024,
+        makeImports: ((Store) -> Imports)? = nil
     ) throws(RuntimeError) {
         do {
             _ = try ModuleHeader(data: data, maximumBytes: maximumBytes)
@@ -27,7 +30,7 @@ public actor ExecutionSession {
             throw RuntimeError.invalidModule("Header validation failed: \(error)")
         }
 
-        self.instance = try WasmInstance(engine: engine, bytes: data)
+        self.instance = try WasmInstance(engine: engine, bytes: data, makeImports: makeImports)
     }
 
     /// Check if the module exports a symbol with the specified name.
@@ -73,6 +76,27 @@ public actor ExecutionSession {
             )
         }
         return value
+    }
+
+    /// Invoke an exported WebAssembly function expecting a framed return pointer,
+    /// extracting the payload bytes and releasing the guest buffer.
+    public func invokeResult(
+        _ name: String,
+        arguments: [RuntimeValue] = []
+    ) throws -> Data {
+        guard !isClosed else { throw RuntimeError.instanceClosed }
+        guard !isInvoking else { throw RuntimeError.invocationBusy }
+
+        isInvoking = true
+        defer { isInvoking = false }
+
+        let returnCode = try instance.invokeInt32(export: name, arguments: arguments)
+        let memory = try instance.getMemory()
+        return try ResultReader.readResultData(result: returnCode, memory: memory) { ptr in
+            if self.instance.hasExport("free_result") {
+                _ = try? self.instance.invoke(export: "free_result", arguments: [.i32(ptr)])
+            }
+        }
     }
 
     /// Access a region of the guest instance's linear memory without copying into an intermediate buffer.

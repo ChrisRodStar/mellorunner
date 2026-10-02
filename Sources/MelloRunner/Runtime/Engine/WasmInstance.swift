@@ -8,7 +8,11 @@ final class WasmInstance {
 
     private var functionCache: [String: Function] = [:]
 
-    init(engine: RuntimeEngine, bytes: Data) throws(RuntimeError) {
+    init(
+        engine: RuntimeEngine,
+        bytes: Data,
+        makeImports: ((Store) -> Imports)? = nil
+    ) throws(RuntimeError) {
         let module: Module
         do {
             module = try parseWasm(bytes: [UInt8](bytes))
@@ -17,9 +21,10 @@ final class WasmInstance {
         }
 
         let store = Store(engine: engine.engine)
+        let imports = makeImports?(store) ?? Imports()
         let instance: Instance
         do {
-            instance = try module.instantiate(store: store)
+            instance = try module.instantiate(store: store, imports: imports)
         } catch {
             throw RuntimeError.invalidModule("Failed to instantiate WebAssembly module: \(error)")
         }
@@ -66,6 +71,17 @@ final class WasmInstance {
         }
     }
 
+    func invokeInt32(export name: String, arguments: [RuntimeValue] = []) throws(RuntimeError) -> Int32 {
+        let results = try invoke(export: name, arguments: arguments)
+        guard let first = results.first, case .i32(let value) = first, results.count == 1 else {
+            throw RuntimeError.exportResultMismatch(
+                expected: "single i32",
+                actual: "\(results)"
+            )
+        }
+        return value
+    }
+
     func withMemory<R: Sendable>(
         offset: UInt,
         count: Int,
@@ -93,6 +109,16 @@ final class WasmInstance {
         try withMemory(offset: offset, count: count) { buffer in
             Data(buffer)
         }
+    }
+
+    func getMemory() throws(RuntimeError) -> Memory {
+        guard let instance else {
+            throw RuntimeError.instanceClosed
+        }
+        guard let exportValue = instance.export("memory"), case .memory(let memory) = exportValue else {
+            throw RuntimeError.exportNotFound("memory")
+        }
+        return memory
     }
 
     func close() {

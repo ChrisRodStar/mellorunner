@@ -21,15 +21,15 @@
   - Implemented full Swift `Codable` bridge (`PostcardDecoder` and `PostcardEncoder`) with keyed, unkeyed (staged sequence length), and single-value containers.
   - Verified exact Rust `postcard` crate wire byte compatibility and edge cases in `PostcardTests` (14 passing tests in 0.002s; 28 total project tests passing in release mode in 0.004s).
 
-## Active & upcoming milestones
+- [x] **Milestone 4: Host bridge & memory management (`Bridge/`)**
+  - Implemented thread-safe `ResourceStore` (`Sources/MelloRunner/Bridge/ResourceStore.swift`) with `OSAllocatedUnfairLock` managing outbound host byte buffers (`[Int32: Data]`) passed to the guest.
+  - Implemented core `std` imports (`Sources/MelloRunner/Bridge/StandardImports.swift`): `std.buffer_len`, `std.read_buffer`, `std.destroy`, `std.current_date`, `std.utc_offset`, `std.parse_date` (with full timezone/locale caching).
+  - Implemented core `env` imports: `env.print`, `env.abort`, `env.sleep`, `env.send_partial_result`.
+  - Implemented `ResultReader` (`Sources/MelloRunner/Bridge/ResultReader.swift`): robust extraction of framed `(length, payload)` from guest linear memory return pointers, negative error code mapping (`BridgeError`), `UInt32.max` error string decoding, and guaranteed `free_result(ptr)` deallocation.
+  - Implemented actor-isolated `HostBridge` (`Sources/MelloRunner/Bridge/HostBridge.swift`) coordinating `ExecutionSession`, `ResourceStore`, `StandardImports`, and extensible `additionalImports`.
+  - Comprehensive unit and integration test coverage: `ResourceStoreTests` (7 tests), `ResultReaderTests` (7 tests), `StandardImportsTests` (4 tests), and `HostBridgeTests` (3 tests), including real-world execution of the 96KB upstream extension binary (`payload.wasm`), bringing project test suite to 49 passing tests in 0.039s.
 
-- [ ] **Milestone 4: Host bridge & memory management (`Bridge/`)**
-  - Implement type-safe `ResourceStore` for managing outbound host buffers (`[Int32: Data]`) passed to the guest.
-  - Implement core `std` imports: `std.buffer_len`, `std.read_buffer`, `std.destroy`.
-  - Implement core `env` imports: `env.print`, `env.abort`, `env.send_partial_result`.
-  - Implement `ResultReader`: read `(length, payload)` from guest linear memory return pointers and invoke guest `free_result(ptr)`.
-  - Implement `HostBridge` coordinating the execution session, resource store, and standard imports.
-  - End-to-end integration test with a fixture verifying handle passing, buffer reading, and result framing.
+## Active & upcoming milestones
 
 - [ ] **Milestone 5: Source models & wire schema (`Models/`, `Serialization/`)**
   - Define public immutable models: `Manga`, `Chapter`, `Page`, `Filter`, `FilterValue`, `Listing`, `MangaPageResult`.
