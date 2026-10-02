@@ -13,7 +13,7 @@
   - Verified `answer.wasm` execution (yielding 42), traps, bounds checks, and teardown in `ExecutionSessionTests` (14 passing tests in 0.005s).
   - Measured release performance in `mellorunner-benchmark` (4.67 µs instantiation, 7.29 µs actor invocation, 5.00 µs memory borrow).
 
-- [x] **Milestone 3: Postcard binary wire format (`Compatibility/Postcard/`)**
+- [x] **Milestone 3: Postcard binary wire format (`Serialization/Postcard/`)**
   - Implemented zero-copy `PostcardReader` over `UnsafeRawBufferPointer` with bounds checks.
   - Implemented bounded LEB128/VarInt decoding (u32: 5 bytes, u64: 10 bytes) and ZigZag signed integers (`VarInt.swift`).
   - Added strict discriminant validation for booleans (`0x00`/`0x01`) and Option tags (`0x00`/`0x01`), fixing upstream silent corruption bugs.
@@ -23,17 +23,18 @@
 
 ## Active & upcoming milestones
 
-- [ ] **Milestone 4: API 0.7 host ABI & memory bridge (`Compatibility/API07/`)**
-  - Implement type-safe `HostResourceStore` for tracking outbound host buffers (`[Int32: Data]`) passed to the guest.
+- [ ] **Milestone 4: Host bridge & memory management (`Bridge/`)**
+  - Implement type-safe `ResourceStore` for managing outbound host buffers (`[Int32: Data]`) passed to the guest.
   - Implement core `std` imports: `std.buffer_len`, `std.read_buffer`, `std.destroy`.
   - Implement core `env` imports: `env.print`, `env.abort`, `env.send_partial_result`.
-  - Implement result framing: read `(length, payload)` from guest linear memory return pointers and invoke guest `free_result(ptr)`.
+  - Implement `ResultReader`: read `(length, payload)` from guest linear memory return pointers and invoke guest `free_result(ptr)`.
+  - Implement `HostBridge` coordinating the execution session, resource store, and standard imports.
   - End-to-end integration test with a fixture verifying handle passing, buffer reading, and result framing.
 
-- [ ] **Milestone 5: Source models & API 0.7 schema (`Sources/Models/`, `Compatibility/API07/Wire/`)**
+- [ ] **Milestone 5: Source models & wire schema (`Models/`, `Serialization/`)**
   - Define public immutable models: `Manga`, `Chapter`, `Page`, `Filter`, `FilterValue`, `Listing`, `MangaPageResult`.
   - Implement wire conversion schemas mapping Postcard binary fields to public models.
-  - Verify field ordering and option tags match the Aidoku API 0.7 wire specification.
+  - Verify field ordering and option tags match the extension wire specification.
 
 - [ ] **Milestone 6: Host services integration (`Host/`)**
   - `Host/Network`: Injected HTTP transport contract (`URLRequest` execution, bounded concurrency, status/header validation).

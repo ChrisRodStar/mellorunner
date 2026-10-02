@@ -6,7 +6,7 @@ Reviewed on October 1, 2026 to identify compatibility requirements and architect
 
 Reference: local `Reference/AidokuRunner`, upstream <https://github.com/Aidoku/AidokuRunner>, revision `cc4d06ff399e7169b9c647bccede7cb29bc805c6`. Read every tracked Swift file and text/configuration file: 61 tracked files total, including 52 Swift files. The remaining binary fixture was inspected for header, section boundaries, imports, exports, byte count, and SHA-256; its instructions were not disassembled or executed. Generated build files, dependency checkouts, and Git internals were outside this review.
 
-The upstream README states source-available copyright restrictions and a distribution exception for Aidoku. This review uses upstream implementation details to identify compatibility questions and design concerns. It copies no implementation or fixture into MelloRunner, makes no clean-room claim, and establishes no distribution clearance. The proposed organization is informed by this inspection. Upstream observations are evidence of behavior at this revision, not a completed API 0.7 specification.
+The upstream README states source-available copyright restrictions and a distribution exception for Aidoku. This review uses upstream implementation details to identify compatibility questions and design concerns. It copies no implementation or fixture into MelloRunner, makes no clean-room claim, and establishes no distribution clearance. The proposed organization is informed by this inspection. Upstream observations are evidence of behavior at this revision, not a completed source extension specification.
 
 ## File-by-file inventory
 
@@ -116,6 +116,6 @@ The inspection identifies these questions for implementation:
 - How are pending JavaScript and WebKit operations cancelled, and how are script handlers and continuations released?
 - Which observed defaults and error behaviors are part of the source contract, and which are upstream implementation choices?
 
-The [Postcard specification](https://postcard.jamesmunns.com/wire-format) defines primitive encoding and requires a shared schema. It does not establish Aidoku's model field order or result framing. Record separate evidence for those API 0.7 requirements before implementation.
+The [Postcard specification](https://postcard.jamesmunns.com/wire-format) defines primitive encoding and requires a shared schema. It does not establish Aidoku's model field order or result framing. Record separate evidence for those bridge requirements before implementation.
 
 Repeated export lookup, byte-array conversions in buffer access, per-call date formatter construction, and collection-prefix buffer replacement in the reference encoder are candidates for measurement. This review establishes no bottleneck or speed improvement. Keep benchmark tooling local; record fixture hashes, toolchain, hardware, configuration, warmups, and raw samples with any published measurements. Separate host-service waiting from runtime work.

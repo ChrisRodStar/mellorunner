@@ -8,3 +8,8 @@
 
 # Local upstream reference checkouts; never published with MelloRunner.
 /Reference/
+
+# Agent configuration
+agent.md
+AGENTS.md
+
