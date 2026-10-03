@@ -1,5 +1,6 @@
 import Foundation
 import WasmKit
+import WebKit
 import os
 
 /// High-level coordinator managing an instantiated source extension session.
@@ -25,6 +26,7 @@ public final class SourceSession: Sendable {
 
     private let bridgeHolder: OSAllocatedUnfairLock<HostBridge>
     private let accumulatedHome: OSAllocatedUnfairLock<Home?>
+    private let resolvedUrls: OSAllocatedUnfairLock<[URL]>
     private let configuration: SourceSessionConfiguration
     private let encoder: PostcardEncoder
     private let decoder: PostcardDecoder
@@ -68,16 +70,7 @@ public final class SourceSession: Sendable {
 
     /// Base URLs declared by the extension.
     public var urls: [URL] {
-        var result: [URL] = []
-        if let primary = manifest.info.url.flatMap({ URL(string: $0) }) {
-            result.append(primary)
-        }
-        if let secondary = manifest.info.urls?.compactMap({ URL(string: $0) }) {
-            for url in secondary where !result.contains(url) {
-                result.append(url)
-            }
-        }
-        return result
+        resolvedUrls.withLock { $0 }
     }
 
     /// Whether this extension provides any exploration categories (static or dynamic).
@@ -140,11 +133,20 @@ public final class SourceSession: Sendable {
         self.configuration = configuration
         self.staticListings = package.manifest.listings ?? []
         self.staticFilters = package.decodeStaticFilters()
-        self.staticSettings = package.decodeStaticSettings()
         self.encoder = PostcardEncoder()
         self.decoder = PostcardDecoder()
         let homeHolder = OSAllocatedUnfairLock<Home?>(initialState: nil)
         self.accumulatedHome = homeHolder
+
+        var initialUrls: [URL] = []
+        if let primary = package.manifest.info.url.flatMap({ URL(string: $0) }) {
+            initialUrls.append(primary)
+        }
+        if let secondary = package.manifest.info.urls?.compactMap({ URL(string: $0) }) {
+            for url in secondary where !initialUrls.contains(url) {
+                initialUrls.append(url)
+            }
+        }
 
         let partialHandler = Self.makePartialHandler(
             configuration: configuration,
@@ -167,7 +169,28 @@ public final class SourceSession: Sendable {
         self.bridgeHolder = OSAllocatedUnfairLock(initialState: bridge)
 
         // Discover features from exports
-        self.features = await SourceFeatures.discover(from: bridge)
+        let features = await SourceFeatures.discover(from: bridge)
+        self.features = features
+
+        // If extension provides dynamic base URL, resolve it now before settings synthesis
+        if features.providesBaseUrl {
+            if let urlString = try? await bridge.invokeAndDecode(String.self, export: "get_base_url"),
+                let url = URL(string: urlString),
+                !initialUrls.contains(url)
+            {
+                initialUrls.insert(url, at: 0)
+            }
+        }
+        self.resolvedUrls = OSAllocatedUnfairLock(initialState: initialUrls)
+
+        // Synthesize extra settings (languages and mirrors) merged with package static settings
+        let extra = Self.getExtraSettings(
+            config: package.manifest.config, languages: package.manifest.info.languages, urls: initialUrls)
+        let mergedSettings = extra + package.decodeStaticSettings()
+        self.staticSettings = mergedSettings
+
+        // Load static & extra setting defaults into settingsStore
+        loadSettingsDefaults(settings: mergedSettings)
 
         // Invoke start export if present (standard Aidoku extension lifecycle)
         if await bridge.hasExport("start") {
@@ -224,34 +247,156 @@ public final class SourceSession: Sendable {
     ) -> @Sendable (Data) -> Void {
         return { data in
             configuration.partialResultHandler?(data)
-            guard let partial = try? PostcardDecoder().decode(HomePartialResult.self, from: data) else { return }
-            switch partial {
-                case .layout(var home):
-                    home.setSourceKey(sessionKey)
-                    let finalHome = home
-                    accumulatedHome.withLock { $0 = finalHome }
-                    configuration.partialHomeHandler?(finalHome)
-                case .component(var component):
-                    component.setSourceKey(sessionKey)
-                    let finalComponent = component
-                    let currentHome = accumulatedHome.withLock { home in
-                        if var existing = home {
-                            if let idx = existing.components.firstIndex(where: { $0.title == finalComponent.title }) {
-                                existing.components[idx] = finalComponent
+            if let partial = try? PostcardDecoder().decode(HomePartialResult.self, from: data) {
+                switch partial {
+                    case .layout(var home):
+                        home.setSourceKey(sessionKey)
+                        let finalHome = home
+                        accumulatedHome.withLock { $0 = finalHome }
+                        configuration.partialHomeHandler?(finalHome)
+                    case .component(var component):
+                        component.setSourceKey(sessionKey)
+                        let finalComponent = component
+                        let currentHome = accumulatedHome.withLock { home in
+                            if var existing = home {
+                                if let idx = existing.components.firstIndex(where: { $0.title == finalComponent.title })
+                                {
+                                    existing.components[idx] = finalComponent
+                                } else {
+                                    existing.components.append(finalComponent)
+                                }
+                                home = existing
+                                return existing
                             } else {
-                                existing.components.append(finalComponent)
+                                let newHome = Home(components: [finalComponent])
+                                home = newHome
+                                return newHome
                             }
-                            home = existing
-                            return existing
-                        } else {
-                            let newHome = Home(components: [finalComponent])
-                            home = newHome
-                            return newHome
                         }
-                    }
-                    configuration.partialHomeHandler?(currentHome)
+                        configuration.partialHomeHandler?(currentHome)
+                }
+            } else if var manga = try? PostcardDecoder().decode(Manga.self, from: data) {
+                manga.sourceKey = sessionKey
+                configuration.partialMangaHandler?(manga)
             }
         }
+    }
+
+    /// Recursively registers default values from settings definitions into the session settings store.
+    func loadSettingsDefaults(settings: [Setting]) {
+        func namespacedKey(_ rawKey: String) -> String {
+            rawKey.contains(".") ? rawKey : "\(key).\(rawKey)"
+        }
+
+        for setting in settings {
+            switch setting.value {
+                case .select(let value):
+                    if let defaultValue = value.defaultValue ?? value.values.first {
+                        configuration.settingsStore.register(key: namespacedKey(setting.key), default: defaultValue)
+                    }
+                case .multiselect(let value):
+                    if let defaultValue = value.defaultValue {
+                        configuration.settingsStore.register(key: namespacedKey(setting.key), default: defaultValue)
+                    }
+                case .toggle(let value):
+                    if let defaultValue = value.defaultValue {
+                        configuration.settingsStore.register(key: namespacedKey(setting.key), default: defaultValue)
+                    }
+                case .stepper(let value):
+                    if let defaultValue = value.defaultValue {
+                        configuration.settingsStore.register(key: namespacedKey(setting.key), default: defaultValue)
+                    }
+                case .segment(let value):
+                    if let defaultValue = value.defaultValue {
+                        configuration.settingsStore.register(key: namespacedKey(setting.key), default: defaultValue)
+                    }
+                case .text(let value):
+                    if let defaultValue = value.defaultValue {
+                        configuration.settingsStore.register(key: namespacedKey(setting.key), default: defaultValue)
+                    }
+                case .editableList(let value):
+                    if let defaultValue = value.defaultValue {
+                        configuration.settingsStore.register(key: namespacedKey(setting.key), default: defaultValue)
+                    }
+                case .picker(let value):
+                    if let defaultValue = value.defaultValue ?? value.values.first {
+                        configuration.settingsStore.register(key: namespacedKey(setting.key), default: defaultValue)
+                    }
+                case .group(let value):
+                    loadSettingsDefaults(settings: value.items)
+                case .page(let value):
+                    loadSettingsDefaults(settings: value.items)
+                default:
+                    break
+            }
+        }
+    }
+
+    /// Synthesizes language and base URL picker settings based on source configuration and available mirrors.
+    public static func getExtraSettings(config: SourceConfiguration?, languages: [String], urls: [URL]) -> [Setting] {
+        var extraSettings: [Setting] = []
+
+        // languages setting
+        if languages.count > 1 {
+            let preferredLanguages = Locale.preferredLanguages.compactMap { lang -> String? in
+                if #available(macOS 13, iOS 16, *) {
+                    return Locale(identifier: lang).language.languageCode?.identifier
+                } else {
+                    return Locale(identifier: lang).languageCode
+                }
+            }
+            let defaultLanguages = Array(Set(languages).intersection(Set(preferredLanguages)))
+
+            let titles = languages.map {
+                Locale.current.localizedString(forIdentifier: $0) ?? $0
+            }
+
+            let languageSelectType = config?.languageSelectType ?? .multiple
+            let value: Setting.Value =
+                languageSelectType == .single
+                ? .select(
+                    .init(
+                        values: languages,
+                        titles: titles,
+                        defaultValue: defaultLanguages.first
+                    ))
+                : .multiselect(
+                    .init(
+                        values: languages,
+                        titles: titles,
+                        defaultValue: defaultLanguages
+                    ))
+
+            let languageKey = languageSelectType == .single ? "language" : "languages"
+            let setting = Setting(
+                key: languageKey,
+                title: languageSelectType == .single ? "LANGUAGE" : "LANGUAGES",
+                notification: languageKey,
+                refreshes: ["content"],
+                value: value
+            )
+
+            extraSettings.append(Setting(title: setting.title, value: .group(.init(items: [setting]))))
+        }
+
+        // base url setting
+        if config?.allowsBaseUrlSelect ?? false, urls.count > 1 {
+            let setting = Setting(
+                key: "url",
+                title: "BASE_URL",
+                notification: nil,
+                refreshes: ["content"],
+                value: .select(
+                    .init(
+                        values: urls.map(\.absoluteString),
+                        defaultValue: urls.first?.absoluteString
+                    ))
+            )
+
+            extraSettings.append(Setting(title: setting.title, value: .group(.init(items: [setting]))))
+        }
+
+        return extraSettings
     }
 
     // MARK: - Listings, Filters, and Settings
@@ -276,13 +421,18 @@ public final class SourceSession: Sendable {
         }
     }
 
-    /// Retrieves in-app settings, combining static `settings.json` settings with dynamic guest settings.
+    /// Retrieves in-app settings, combining synthesized extra settings, static `settings.json`, and dynamic guest settings.
     public func getSettings() async throws -> [Setting] {
+        let extra = Self.getExtraSettings(config: manifest.config, languages: languages, urls: urls)
         if features.dynamicSettings {
             let dynamic = try await bridge.invokeAndDecode([Setting].self, export: "get_settings")
-            return staticSettings + dynamic
+            let combined = extra + staticSettings + dynamic
+            loadSettingsDefaults(settings: combined)
+            return combined
         } else {
-            return staticSettings
+            let combined = extra + staticSettings
+            loadSettingsDefaults(settings: combined)
+            return combined
         }
     }
 
@@ -309,10 +459,17 @@ public final class SourceSession: Sendable {
         page: Int,
         filters: [FilterValue] = []
     ) async throws -> MangaPageResult {
+        let activeFilters: [FilterValue] =
+            if let query, !query.isEmpty, manifest.config?.hidesFiltersWhileSearching ?? false {
+                []
+            } else {
+                filters
+            }
+
         let queryPtr = bridge.storeResource(string: query ?? "")
         defer { bridge.removeResource(queryPtr) }
 
-        let filtersData = try encoder.encode(filters)
+        let filtersData = try encoder.encode(activeFilters)
         let filtersPtr = bridge.storeResource(filtersData)
         defer { bridge.removeResource(filtersPtr) }
 
@@ -345,6 +502,14 @@ public final class SourceSession: Sendable {
             ]
         )
         updatedManga.sourceKey = key
+
+        // Set default language for chapters if source specifies a single language
+        if languages.count == 1, let defaultLanguage = languages.first, let chapters = updatedManga.chapters {
+            for chapterIdx in chapters.indices {
+                updatedManga.chapters?[chapterIdx].language = chapters[chapterIdx].language ?? defaultLanguage
+            }
+        }
+
         return updatedManga
     }
 
@@ -461,7 +626,10 @@ public final class SourceSession: Sendable {
         )
         defer { bridge.removeResource(resultImageRef) }
 
-        return bridge.resourceStore.fetch(resultImageRef)
+        if let data = bridge.resourceStore.fetch(resultImageRef) {
+            return data
+        }
+        return bridge.resourceStore.fetchImage(resultImageRef)?.pngData()
     }
 
     /// Processes a manga cover image if the extension supports `process_cover_image`.
@@ -489,13 +657,23 @@ public final class SourceSession: Sendable {
         )
         defer { bridge.removeResource(resultImageRef) }
 
-        return bridge.resourceStore.fetch(resultImageRef)
+        if let data = bridge.resourceStore.fetch(resultImageRef) {
+            return data
+        }
+        return bridge.resourceStore.fetchImage(resultImageRef)?.pngData()
     }
 
     /// Queries the extension for its current base URL.
     public func getBaseUrl() async throws -> URL? {
+        guard features.providesBaseUrl else { return nil }
         let urlString = try await bridge.invokeAndDecode(String.self, export: "get_base_url")
-        return URL(string: urlString)
+        guard let url = URL(string: urlString) else { return nil }
+        resolvedUrls.withLock { urls in
+            if !urls.contains(url) {
+                urls.insert(url, at: 0)
+            }
+        }
+        return url
     }
 
     /// Retrieves an extended localized page description.
@@ -619,10 +797,49 @@ public final class SourceSession: Sendable {
         )
     }
 
+    /// Matches a tag string to a genre filter value if supported by the extension.
+    public func matchingGenreFilter(for tag: String, filters: [Filter]? = nil) -> FilterValue? {
+        if manifest.config?.supportsTagSearch ?? false {
+            return .select(id: "genre", value: tag)
+        }
+
+        let searchFilters = filters ?? staticFilters
+        for filter in searchFilters {
+            if case .multiselect(let genreFilter) = filter.value, genreFilter.isGenre {
+                if let index = genreFilter.options.firstIndex(where: { $0 == tag }) {
+                    let value = (genreFilter.ids ?? genreFilter.options)[index]
+                    return .multiselect(id: filter.id, included: [value], excluded: [])
+                }
+            } else if case .select(let genreFilter) = filter.value, genreFilter.isGenre {
+                if let index = genreFilter.options.firstIndex(where: { $0 == tag }) {
+                    let value = (genreFilter.ids ?? genreFilter.options)[index]
+                    return .select(id: filter.id, value: value)
+                }
+            }
+        }
+
+        return nil
+    }
+
+    /// Clears web cache and isolated cookies for this source extension.
+    public func clearCache() async {
+        await WKWebsiteDataStore.forSource(key: key).clearRecords()
+    }
+
     // MARK: - Teardown
 
     /// Closes the session and releases all associated WebAssembly instances and host resources.
     public func close() async {
         await bridge.close()
+    }
+}
+
+// MARK: - Identifiable & Equatable
+
+extension SourceSession: Identifiable, Equatable {
+    public var id: String { key }
+
+    public static func == (lhs: SourceSession, rhs: SourceSession) -> Bool {
+        lhs.key == rhs.key
     }
 }

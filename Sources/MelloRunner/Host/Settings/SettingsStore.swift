@@ -18,6 +18,13 @@ extension SettingsStore {
         set(nil, forKey: key)
     }
 
+    /// Registers a default value for the key if no value is currently stored.
+    public func register(key: String, default defaultValue: any Sendable) {
+        if value(forKey: key) == nil {
+            set(defaultValue, forKey: key)
+        }
+    }
+
     /// Convenience typed accessor for boolean values.
     public func bool(forKey key: String) -> Bool? {
         value(forKey: key) as? Bool

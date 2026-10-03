@@ -34,7 +34,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
 
 ## Phase 2: Missing Host Modules
 
-- [ ] **Task 3: Implement `CanvasImports` (15 2D graphics functions)**
+- [x] **Task 3: Implement `CanvasImports` (15 2D graphics functions)**
   - **New File**: [`Sources/MelloRunner/Host/Canvas/CanvasImports.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/Canvas/CanvasImports.swift)
   - **Modified Files**:
     - [`Sources/MelloRunner/Bridge/HostBridge.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Bridge/HostBridge.swift)
@@ -61,7 +61,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
     4. Register `canvasImports.register(into: &imports, store: store)` inside `HostBridge.makeImports(store:)`.
   - **Verification**: Create [`Tests/MelloRunnerTests/Host/CanvasImportsTests.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Tests/MelloRunnerTests/Host/CanvasImportsTests.swift) testing context creation, drawing, image slicing, and PNG/JPEG export.
 
-- [ ] **Task 4: Implement WebKit webview handler for `JavaScriptImports`**
+- [x] **Task 4: Implement WebKit webview handler for `JavaScriptImports`**
   - **New File**: [`Sources/MelloRunner/Host/JavaScript/WebKitHandler.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/JavaScript/WebKitHandler.swift)
   - **Modified File**: [`Sources/MelloRunner/Host/JavaScript/JavaScriptImports.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Host/JavaScript/JavaScriptImports.swift)
   - **Changes**:
@@ -83,7 +83,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
 
 ## Phase 3: `SourceSession` Runtime Behaviors
 
-- [ ] **Task 5: Implement `loadSettingsDefaults` on session initialization**
+- [x] **Task 5: Implement `loadSettingsDefaults` on session initialization**
   - **Target File**: [`Sources/MelloRunner/Session/SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift)
   - **Changes**:
     1. Add private method `loadSettingsDefaults(from settings: [Setting])`.
@@ -92,7 +92,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
     4. Call `loadSettingsDefaults` on `staticSettings` during `init` and on dynamic settings in `getSettings()`.
   - **Verification**: Add a test in [`Tests/MelloRunnerTests/Session/SourceSessionTests.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Tests/MelloRunnerTests/Session/SourceSessionTests.swift) verifying that `settingsStore` returns the manifest default for an untouched setting key.
 
-- [ ] **Task 6: Dynamic base URL resolution**
+- [x] **Task 6: Dynamic base URL resolution**
   - **Target File**: [`Sources/MelloRunner/Session/SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift)
   - **Changes**:
     1. Change `urls` from a pure computed property to a property backed by a thread-safe array `resolvedUrls: OSAllocatedUnfairLock<[URL]>`.
@@ -100,7 +100,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
     3. If `features.providesBaseUrl` is true, invoke `getBaseUrl()` and, if valid and not already present, prepend it to `resolvedUrls`.
   - **Verification**: Add a test in [`Tests/MelloRunnerTests/Session/SourceSessionTests.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Tests/MelloRunnerTests/Session/SourceSessionTests.swift) verifying that an extension exporting `get_base_url` updates `session.urls`.
 
-- [ ] **Task 7: Synthesize extra settings (`getExtraSettings`)**
+- [x] **Task 7: Synthesize extra settings (`getExtraSettings`)**
   - **Target File**: [`Sources/MelloRunner/Session/SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift)
   - **Changes**:
     1. Implement `getExtraSettings() -> [Setting]`:
@@ -109,7 +109,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
     2. In `getSettings()`, prepend or append `getExtraSettings()` to the returned list.
   - **Verification**: Add a test verifying synthesized language and base URL settings on multi-language and multi-mirror manifests.
 
-- [ ] **Task 8: Respect `hidesFiltersWhileSearching`**
+- [x] **Task 8: Respect `hidesFiltersWhileSearching`**
   - **Target File**: [`Sources/MelloRunner/Session/SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift)
   - **Changes**:
     1. In `getSearchMangaList(query:page:filters:)`, check:
@@ -119,14 +119,14 @@ This document outlines the step-by-step tasks required to resolve all defects, m
     2. Pass `effectiveFilters` to guest encoding instead of the raw `filters` array.
   - **Verification**: Add a test confirming that filters are suppressed during keyword search when `hidesFiltersWhileSearching == true`.
 
-- [ ] **Task 9: Default chapter language backfill**
+- [x] **Task 9: Default chapter language backfill**
   - **Target File**: [`Sources/MelloRunner/Session/SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift)
   - **Changes**:
     1. In `getMangaUpdate(manga:needsDetails:needsChapters:)`:
        - If `languages.count == 1`, iterate over `updatedManga.chapters` and set `chapter.language = languages.first` where `chapter.language == nil`.
   - **Verification**: Add a test confirming chapters without explicit language tags receive the sole source language.
 
-- [ ] **Task 10: Stream partial manga updates in `makePartialHandler`**
+- [x] **Task 10: Stream partial manga updates in `makePartialHandler`**
   - **Target Files**:
     - [`Sources/MelloRunner/Session/SourceSessionConfiguration.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSessionConfiguration.swift)
     - [`Sources/MelloRunner/Session/SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift)
@@ -142,7 +142,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
        ```
   - **Verification**: Add a test verifying that partial manga updates delivered via `env.send_partial_result` invoke `partialMangaHandler`.
 
-- [ ] **Task 11: Tag search mapping helper (`matchingGenreFilter`)**
+- [x] **Task 11: Tag search mapping helper (`matchingGenreFilter`)**
   - **Target File**: [`Sources/MelloRunner/Session/SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift)
   - **Changes**:
     1. Implement `public func matchingGenreFilter(for tag: String) async throws -> FilterValue?`:
@@ -152,7 +152,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
        - Return `.select(id:value:)` or `.multiselect(id:included:excluded:)`.
   - **Verification**: Add a test verifying tag search mapping against static and dynamic genre filters.
 
-- [ ] **Task 12: `Identifiable`, `Equatable`, and `clearCache()` on `SourceSession`**
+- [x] **Task 12: `Identifiable`, `Equatable`, and `clearCache()` on `SourceSession`**
   - **Target File**: [`Sources/MelloRunner/Session/SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift)
   - **Changes**:
     1. Conform `SourceSession: Identifiable, Equatable`:
@@ -166,7 +166,7 @@ This document outlines the step-by-step tasks required to resolve all defects, m
 
 ## Phase 4: Final Validation
 
-- [ ] **Task 13: Full Test Suite Execution & Lint Verification**
+- [x] **Task 13: Full Test Suite Execution & Lint Verification**
   - Run `swift test` across all targets.
   - Run `swift-format lint --recursive Sources Tests`.
   - Verify 100% test pass rate with zero warnings.

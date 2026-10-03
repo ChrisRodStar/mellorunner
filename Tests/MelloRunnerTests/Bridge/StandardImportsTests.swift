@@ -106,7 +106,7 @@ struct StandardImportsTests {
             }
         )
 
-        let module = try parseWasm(bytes: [UInt8](data))
+        _ = try parseWasm(bytes: [UInt8](data))
 
         // Verify exports
         #expect(await session.hasExport("memory"))

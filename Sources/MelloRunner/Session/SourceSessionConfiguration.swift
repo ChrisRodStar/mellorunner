@@ -27,6 +27,9 @@ public struct SourceSessionConfiguration: Sendable {
     /// Optional closure receiving intermediate streaming home feed updates.
     public var partialHomeHandler: (@Sendable (Home) -> Void)?
 
+    /// Optional closure receiving intermediate streaming manga updates.
+    public var partialMangaHandler: (@Sendable (Manga) -> Void)?
+
     /// Optional hook to link additional WebAssembly host imports into the store.
     public var additionalImports: (@Sendable (Store, inout Imports) -> Void)?
 
@@ -39,6 +42,7 @@ public struct SourceSessionConfiguration: Sendable {
         printHandler: (@Sendable (String) -> Void)? = nil,
         partialResultHandler: (@Sendable (Data) -> Void)? = nil,
         partialHomeHandler: (@Sendable (Home) -> Void)? = nil,
+        partialMangaHandler: (@Sendable (Manga) -> Void)? = nil,
         additionalImports: (@Sendable (Store, inout Imports) -> Void)? = nil
     ) {
         self.engine = engine
@@ -49,6 +53,7 @@ public struct SourceSessionConfiguration: Sendable {
         self.printHandler = printHandler
         self.partialResultHandler = partialResultHandler
         self.partialHomeHandler = partialHomeHandler
+        self.partialMangaHandler = partialMangaHandler
         self.additionalImports = additionalImports
     }
 }

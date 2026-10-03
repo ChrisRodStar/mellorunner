@@ -11,6 +11,7 @@ public actor HostBridge {
     public nonisolated let htmlImports: HTMLImports
     public nonisolated let defaultsImports: DefaultsImports
     public nonisolated let javascriptImports: JavaScriptImports
+    public nonisolated let canvasImports: CanvasImports
     public nonisolated let decoder: PostcardDecoder
 
     public init(
@@ -58,9 +59,15 @@ public actor HostBridge {
 
         let js = JavaScriptImports(
             resourceStore: resourceStore,
-            printHandler: printHandler
+            printHandler: printHandler,
+            webViewNamespace: settingsNamespace
         )
         self.javascriptImports = js
+
+        let canvas = CanvasImports(
+            resourceStore: resourceStore
+        )
+        self.canvasImports = canvas
 
         self.session = try ExecutionSession(
             data: wasmBytes,
@@ -73,6 +80,7 @@ public actor HostBridge {
                 html.register(into: &wasmImports, store: store)
                 defaults.register(into: &wasmImports, store: store)
                 js.register(into: &wasmImports, store: store)
+                canvas.register(into: &wasmImports, store: store)
                 additionalImports?(store, &wasmImports)
                 return wasmImports
             }

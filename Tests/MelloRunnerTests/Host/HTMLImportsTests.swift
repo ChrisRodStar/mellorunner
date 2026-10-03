@@ -62,8 +62,7 @@ struct HTMLImportsTests {
 
         let htmlImports = HTMLImports(resourceStore: resourceStore)
         let store = Store(engine: Engine())
-        let imports = htmlImports.makeImports(store: store)
-        #expect(imports != nil)
+        _ = htmlImports.makeImports(store: store)
 
         let fetchedDoc: Document? = resourceStore.fetchObject(docDesc)
         let fetchedElem: Element? = resourceStore.fetchObject(elemDesc)

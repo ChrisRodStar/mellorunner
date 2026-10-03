@@ -40,14 +40,14 @@ struct HostBridgeTests {
         let bridge = try HostBridge(wasmBytes: data)
 
         let testData = Data([100, 101, 102])
-        let d1 = await bridge.storeResource(testData)
-        let d2 = await bridge.storeResource(string: "MelloRunner")
+        let d1 = bridge.storeResource(testData)
+        let d2 = bridge.storeResource(string: "MelloRunner")
 
         #expect(d1 == 1)
         #expect(d2 == 2)
         #expect(bridge.resourceStore.count == 2)
 
-        let removed = await bridge.removeResource(d1)
+        let removed = bridge.removeResource(d1)
         #expect(removed == testData)
         #expect(bridge.resourceStore.count == 1)
 
