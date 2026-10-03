@@ -177,15 +177,15 @@ public final class NetworkImports: @unchecked Sendable {
             }
         )
 
-        // 5. net.set_timeout(descriptor: i32, timeout: i32) -> i32
+        // 5. net.set_timeout(descriptor: i32, timeout: f64) -> i32
         imports.define(
             module: "net",
             name: "set_timeout",
-            Function(store: store, type: FunctionType(parameters: [.i32, .i32], results: [.i32])) {
+            Function(store: store, type: FunctionType(parameters: [.i32, .f64], results: [.i32])) {
                 [weak self] _, args in
                 guard let self else { return [.i32(UInt32(bitPattern: NetResult.invalidDescriptor.rawValue))] }
                 let descriptor = Int32(bitPattern: args[0].i32)
-                let timeoutSeconds = Double(Int32(bitPattern: args[1].i32))
+                let timeoutSeconds = Double(bitPattern: args[1].f64)
 
                 guard var request: NetRequest = self.resourceStore.fetchObject(descriptor) else {
                     return [.i32(UInt32(bitPattern: NetResult.invalidDescriptor.rawValue))]

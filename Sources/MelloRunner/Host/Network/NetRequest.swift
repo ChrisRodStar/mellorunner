@@ -2,21 +2,33 @@ import Foundation
 
 /// Internal model tracking an in-flight or completed guest HTTP request lifecycle.
 public struct NetRequest: Sendable {
-    public enum Method: Int, Sendable {
+    public enum Method: Int, Sendable, Codable, CaseIterable {
         case get = 0
         case post = 1
         case put = 2
-        case delete = 3
-        case head = 4
+        case head = 3
+        case delete = 4
+        case patch = 5
+        case options = 6
+        case connect = 7
+        case trace = 8
 
         public var httpMethod: String {
             switch self {
                 case .get: "GET"
                 case .post: "POST"
                 case .put: "PUT"
-                case .delete: "DELETE"
                 case .head: "HEAD"
+                case .delete: "DELETE"
+                case .patch: "PATCH"
+                case .options: "OPTIONS"
+                case .connect: "CONNECT"
+                case .trace: "TRACE"
             }
+        }
+
+        public var string: String {
+            httpMethod
         }
     }
 
