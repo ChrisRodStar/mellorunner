@@ -127,7 +127,7 @@ struct UpstreamCompatibilityTests {
 
     @Test("Deterministic network transport mock with real Asura Scans extension")
     func asuraScansWithMockNetworkTransport() async throws {
-        let aixURL = resolvePath("Reference/en.asurascans-v19.aix")
+        let aixURL = resolvePath("Tests/MelloRunnerTests/Fixtures/en.asurascans-v19.aix")
         guard FileManager.default.fileExists(atPath: aixURL.path) else { return }
 
         let sampleHTML = """

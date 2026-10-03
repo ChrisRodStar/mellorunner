@@ -48,7 +48,6 @@ docs/
     bridge/
   decisions/
 assets/                               # approved branding
-Reference/                            # ignored; outside package targets
 ```
 
 ## Responsibilities

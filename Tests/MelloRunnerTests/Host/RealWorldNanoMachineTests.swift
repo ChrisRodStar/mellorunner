@@ -17,7 +17,7 @@ struct RealWorldNanoMachineTests {
 
     @Test("Parse real-world 475KB Nano Machine HTML layout")
     func parseRealWorldNanoMachineHTML() throws {
-        let htmlURL = resolvePath("Reference/NanoMachine/nano-machine.html")
+        let htmlURL = resolvePath("Tests/MelloRunnerTests/Fixtures/NanoMachine/nano-machine.html")
         guard FileManager.default.fileExists(atPath: htmlURL.path) else { return }
 
         let htmlString = try String(contentsOf: htmlURL, encoding: .utf8)
@@ -42,7 +42,7 @@ struct RealWorldNanoMachineTests {
 
     @Test("Parse real-world Nano Machine Chapter 1 page HTML")
     func parseRealWorldChapter1HTML() throws {
-        let htmlURL = resolvePath("Reference/NanoMachine/nano-machine-chapter-1.html")
+        let htmlURL = resolvePath("Tests/MelloRunnerTests/Fixtures/NanoMachine/nano-machine-chapter-1.html")
         guard FileManager.default.fileExists(atPath: htmlURL.path) else { return }
 
         let htmlString = try String(contentsOf: htmlURL, encoding: .utf8)
@@ -58,7 +58,7 @@ struct RealWorldNanoMachineTests {
 
     @Test("Instantiate real-world 220KB Asura Scans Wasm extension and query listings")
     func instantiateAsuraScansExtension() async throws {
-        let wasmURL = resolvePath("Reference/NanoMachine/main.wasm")
+        let wasmURL = resolvePath("Tests/MelloRunnerTests/Fixtures/NanoMachine/main.wasm")
         guard FileManager.default.fileExists(atPath: wasmURL.path) else { return }
 
         let wasmBytes = try Data(contentsOf: wasmURL)

@@ -21,13 +21,8 @@ swift test
 
 ## Layout
 
-- `Sources/MelloRunner`: runtime library; currently header inspection.
-- `Tests/MelloRunnerTests`: contract tests and generated fixtures.
-- `docs`: scope, architecture, compatibility, provenance, and next work.
-- `Reference/AidokuRunner`: local upstream checkout, ignored by Git and excluded from package targets.
+- `Sources/MelloRunner`: runtime library for WebAssembly execution, host services, Postcard serialization, and session management.
+- `Tests/MelloRunnerTests`: contract, unit, and integration tests with self-contained fixtures.
+- `docs`: product scope, architecture, and architecture decision records.
 
-The first execution milestone is to invoke the fixture's `answer` export and receive 42 through an independently implemented runtime adapter.
-
-[Scope](docs/PRODUCT.md) · [Architecture](docs/ARCHITECTURE.md) · [Compatibility](docs/COMPATIBILITY.md) · [Provenance](docs/PROVENANCE.md) · [Next work](docs/TODO.md)
-
-Restore the optional local reference with `git clone https://github.com/Aidoku/AidokuRunner.git Reference/AidokuRunner`.
+[Scope](docs/PRODUCT.md) · [Architecture](docs/ARCHITECTURE.md) · [Engine Decision](docs/decisions/0001-engine-selection.md)

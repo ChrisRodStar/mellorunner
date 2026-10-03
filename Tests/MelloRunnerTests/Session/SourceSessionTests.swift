@@ -18,7 +18,7 @@ struct SourceSessionTests {
 
     @Test("Instantiate SourceSession from real .aix archive (Asura Scans)")
     func instantiateSessionFromAIX() async throws {
-        let aixURL = resolvePath("Reference/en.asurascans-v19.aix")
+        let aixURL = resolvePath("Tests/MelloRunnerTests/Fixtures/en.asurascans-v19.aix")
         guard FileManager.default.fileExists(atPath: aixURL.path) else { return }
 
         let session = try await SourceSession(url: aixURL)

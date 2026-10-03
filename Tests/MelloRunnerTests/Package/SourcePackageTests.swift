@@ -17,7 +17,7 @@ struct SourcePackageTests {
 
     @Test("Load real-world .aix ZIP package (Asura Scans)")
     func loadRealWorldAIXPackage() throws {
-        let aixURL = resolvePath("Reference/en.asurascans-v19.aix")
+        let aixURL = resolvePath("Tests/MelloRunnerTests/Fixtures/en.asurascans-v19.aix")
         guard FileManager.default.fileExists(atPath: aixURL.path) else { return }
 
         let package = try SourcePackage.load(from: aixURL)
@@ -54,8 +54,8 @@ struct SourcePackageTests {
 
     @Test("Load package from unpacked directory and compare with .aix archive")
     func loadPackageFromDirectory() throws {
-        let dirURL = resolvePath("Reference/AsuraScans")
-        let aixURL = resolvePath("Reference/en.asurascans-v19.aix")
+        let dirURL = resolvePath("Tests/MelloRunnerTests/Fixtures/AsuraScans")
+        let aixURL = resolvePath("Tests/MelloRunnerTests/Fixtures/en.asurascans-v19.aix")
         guard FileManager.default.fileExists(atPath: dirURL.path),
             FileManager.default.fileExists(atPath: aixURL.path)
         else {
