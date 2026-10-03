@@ -1,9 +1,9 @@
-// swift-tools-version: 6.4
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "MelloRunner",
-    platforms: [.iOS("27.0"), .macOS("27.0")],
+    platforms: [.iOS(.v18), .macOS(.v15)],
     products: [
         .library(name: "MelloRunner", targets: ["MelloRunner"])
     ],

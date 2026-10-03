@@ -10,7 +10,8 @@ import Testing
         return try Data(contentsOf: url)
     }
 
-    @Test func `Execute answer export and receive 42`() async throws {
+    @Test("Execute answer export and receive 42")
+    func executeAnswerExport() async throws {
         let data = try loadAnswerFixture()
         let session = try ExecutionSession(data: data)
 
@@ -24,7 +25,8 @@ import Testing
         #expect(intResult == 42)
     }
 
-    @Test func `Reject call to nonexistent export`() async throws {
+    @Test("Reject call to nonexistent export")
+    func rejectCallToNonexistentExport() async throws {
         let data = try loadAnswerFixture()
         let session = try ExecutionSession(data: data)
 
@@ -33,7 +35,8 @@ import Testing
         }
     }
 
-    @Test func `Reject invalid and truncated modules`() async {
+    @Test("Reject invalid and truncated modules")
+    func rejectInvalidAndTruncatedModules() async {
         #expect(throws: RuntimeError.self) {
             try ExecutionSession(data: Data([0, 97, 115, 109]))
         }
@@ -49,14 +52,16 @@ import Testing
         }
     }
 
-    @Test func `Enforce configured byte limit during session creation`() throws {
+    @Test("Enforce configured byte limit during session creation")
+    func enforceConfiguredByteLimit() throws {
         let data = try loadAnswerFixture()
         #expect(throws: RuntimeError.self) {
             try ExecutionSession(data: data, maximumBytes: 10)
         }
     }
 
-    @Test func `Trapping function raises RuntimeError trap`() async throws {
+    @Test("Trapping function raises RuntimeError trap")
+    func trappingFunctionRaisesRuntimeError() async throws {
         // (module (func (export "boom") unreachable))
         let trapWasm = Data([
             0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
@@ -78,7 +83,8 @@ import Testing
         }
     }
 
-    @Test func `Explicit session close releases resources and rejects further invocations`() async throws {
+    @Test("Explicit session close releases resources and rejects further invocations")
+    func explicitSessionCloseReleasesResources() async throws {
         let data = try loadAnswerFixture()
         let session = try ExecutionSession(data: data)
 
@@ -92,7 +98,8 @@ import Testing
         }
     }
 
-    @Test func `RuntimeValue representations and conversions`() {
+    @Test("RuntimeValue representations and conversions")
+    func runtimeValueRepresentationsAndConversions() {
         let i32 = RuntimeValue.i32(42)
         let i64 = RuntimeValue.i64(100)
         let f32 = RuntimeValue.f32(3.14)
@@ -106,7 +113,8 @@ import Testing
         #expect(i32.description == "i32(42)")
     }
 
-    @Test func `Guest memory reading and zero-copy access`() async throws {
+    @Test("Guest memory reading and zero-copy access")
+    func guestMemoryReadingAndZeroCopyAccess() async throws {
         // Module with exported memory and "hello" data segment at offset 0
         let memoryWasm = Data([
             0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
@@ -131,7 +139,8 @@ import Testing
         }
     }
 
-    @Test func `Read memory on module without memory export throws exportNotFound`() async throws {
+    @Test("Read memory on module without memory export throws exportNotFound")
+    func readMemoryWithoutMemoryExportThrows() async throws {
         let data = try loadAnswerFixture()
         let session = try ExecutionSession(data: data)
 

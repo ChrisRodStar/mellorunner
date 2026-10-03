@@ -5,7 +5,8 @@ import Testing
 @Suite struct PostcardTests {
     // MARK: - VarInt & ZigZag Tests
 
-    @Test func `ZigZag encoding and decoding extremes`() {
+    @Test("ZigZag encoding and decoding extremes")
+    func zigZagEncodingAndDecodingExtremes() {
         let i16Cases: [Int16] = [0, 1, -1, 42, -42, 127, -128, .max, .min]
         for val in i16Cases {
             let encoded = VarInt.zigZagEncode(val)
@@ -28,7 +29,8 @@ import Testing
         }
     }
 
-    @Test func `VarInt bounds and byte limits`() throws {
+    @Test("VarInt bounds and byte limits")
+    func varIntBoundsAndByteLimits() throws {
         var buffer: [UInt8] = []
 
         // 0 encodes to 1 byte
@@ -54,7 +56,8 @@ import Testing
         #expect(cursor == 2)
     }
 
-    @Test func `VarInt overflow rejection`() {
+    @Test("VarInt overflow rejection")
+    func varIntOverflowRejection() {
         // 6-byte varint sequence attempting to decode as u32
         let overflowU32Bytes: [UInt8] = [0x80, 0x80, 0x80, 0x80, 0x80, 0x01]
         overflowU32Bytes.withUnsafeBytes { raw in
@@ -76,7 +79,8 @@ import Testing
 
     // MARK: - PostcardReader & PostcardWriter Primitives
 
-    @Test func `Primitive types round-trip through Writer and Reader`() throws {
+    @Test("Primitive types round-trip through Writer and Reader")
+    func primitiveTypesRoundTrip() throws {
         var writer = PostcardWriter()
         writer.writeU8(255)
         writer.writeI8(-128)
@@ -116,7 +120,8 @@ import Testing
         }
     }
 
-    @Test func `Reject invalid boolean discriminants`() {
+    @Test("Reject invalid boolean discriminants")
+    func rejectInvalidBooleanDiscriminants() {
         let invalidBoolData = Data([0x02])
         #expect(throws: PostcardError.invalidBooleanDiscriminant(0x02)) {
             try PostcardReader.read(from: invalidBoolData) { reader in
@@ -125,7 +130,8 @@ import Testing
         }
     }
 
-    @Test func `Reject invalid option discriminants`() {
+    @Test("Reject invalid option discriminants")
+    func rejectInvalidOptionDiscriminants() {
         let invalidOptionData = Data([0xFF])
         #expect(throws: PostcardError.invalidOptionDiscriminant(0xFF)) {
             try PostcardReader.read(from: invalidOptionData) { reader in
@@ -134,7 +140,8 @@ import Testing
         }
     }
 
-    @Test func `Reject malformed UTF-8 in strings`() {
+    @Test("Reject malformed UTF-8 in strings")
+    func rejectMalformedUTF8InStrings() {
         var writer = PostcardWriter()
         // Write string length 2, but follow with invalid UTF-8 bytes [0xFF, 0xFF]
         writer.writeSequenceLength(2)
@@ -148,7 +155,8 @@ import Testing
         }
     }
 
-    @Test func `Enforce maximum length limits`() {
+    @Test("Enforce maximum length limits")
+    func enforceMaximumLengthLimits() {
         var writer = PostcardWriter()
         writer.writeSequenceLength(1024)
 
@@ -159,7 +167,8 @@ import Testing
         }
     }
 
-    @Test func `Detect trailing bytes`() {
+    @Test("Detect trailing bytes")
+    func detectTrailingBytes() {
         let data = Data([0x01, 0x02, 0x03])
         #expect(throws: PostcardError.trailingBytes(remaining: 2)) {
             try PostcardReader.read(from: data) { reader in
@@ -181,7 +190,8 @@ import Testing
         let tags: [String]
     }
 
-    @Test func `Codable struct round-trip with optional and array fields`() throws {
+    @Test("Codable struct round-trip with optional and array fields")
+    func codableStructRoundTrip() throws {
         let original = MangaPayload(
             id: "manga-123",
             title: "Mello's Adventure",
@@ -201,7 +211,8 @@ import Testing
         #expect(decoded == original)
     }
 
-    @Test func `Codable struct with nil optional field`() throws {
+    @Test("Codable struct with nil optional field")
+    func codableStructWithNilOptionalField() throws {
         let original = MangaPayload(
             id: "manga-456",
             title: "Unknown Author Manga",
@@ -223,7 +234,8 @@ import Testing
         #expect(decoded.tags.isEmpty)
     }
 
-    @Test func `Codable top-level array of structs`() throws {
+    @Test("Codable top-level array of structs")
+    func codableTopLevelArrayOfStructs() throws {
         let items = [
             MangaPayload(
                 id: "1", title: "One", chapterCount: 10, score: 7.0, isCompleted: true, author: "A", tags: ["T1"]),
@@ -241,7 +253,8 @@ import Testing
         #expect(decoded == items)
     }
 
-    @Test func `Codable nested arrays and optional elements`() throws {
+    @Test("Codable nested arrays and optional elements")
+    func codableNestedArraysAndOptionalElements() throws {
         let nested = [[1, 2], [3, 4, 5], []]
         let encoder = PostcardEncoder()
         let data = try encoder.encode(nested)
@@ -251,7 +264,8 @@ import Testing
         #expect(decoded == nested)
     }
 
-    @Test func `Postcard Rust test vectors exact byte wire compatibility`() throws {
+    @Test("Postcard Rust test vectors exact byte wire compatibility")
+    func postcardRustTestVectorsCompatibility() throws {
         // Rust postcard wire format test vectors:
         // 1. bool true -> [0x01], false -> [0x00]
         let trueBytes = try PostcardEncoder().encode(true)
