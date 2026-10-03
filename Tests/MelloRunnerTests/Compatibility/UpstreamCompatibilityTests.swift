@@ -17,9 +17,19 @@ struct UpstreamCompatibilityTests {
         return URL(fileURLWithPath: found)
     }
 
+    private func resolvePayloadDir() -> URL {
+        let candidates = [
+            "Tests/MelloRunnerTests/Fixtures/Payload",
+            "../Tests/MelloRunnerTests/Fixtures/Payload",
+            "../../Tests/MelloRunnerTests/Fixtures/Payload",
+        ]
+        let found = candidates.first { FileManager.default.fileExists(atPath: $0) } ?? candidates[0]
+        return URL(fileURLWithPath: found)
+    }
+
     @Test("Load upstream reference source.json manifest and verify schema metadata")
     func loadUpstreamReferenceManifest() async throws {
-        let payloadDir = resolvePath("Reference/AidokuRunner/Tests/AidokuRunnerTests/Resources/Payload")
+        let payloadDir = resolvePayloadDir()
         guard FileManager.default.fileExists(atPath: payloadDir.path) else { return }
 
         let package = try SourcePackage.load(from: payloadDir)
@@ -34,7 +44,7 @@ struct UpstreamCompatibilityTests {
 
     @Test("Instantiate SourceSession from upstream Payload directory")
     func instantiateUpstreamSession() async throws {
-        let payloadDir = resolvePath("Reference/AidokuRunner/Tests/AidokuRunnerTests/Resources/Payload")
+        let payloadDir = resolvePayloadDir()
         guard FileManager.default.fileExists(atPath: payloadDir.path) else { return }
 
         let session = try await SourceSession(url: payloadDir)
@@ -79,7 +89,7 @@ struct UpstreamCompatibilityTests {
 
     @Test("Verify upstream panic behavior on getMangaUpdate and clean recovery via restart()")
     func upstreamPanicAndRestartRecovery() async throws {
-        let payloadDir = resolvePath("Reference/AidokuRunner/Tests/AidokuRunnerTests/Resources/Payload")
+        let payloadDir = resolvePayloadDir()
         guard FileManager.default.fileExists(atPath: payloadDir.path) else { return }
 
         let session = try await SourceSession(url: payloadDir)
@@ -194,7 +204,7 @@ struct UpstreamCompatibilityTests {
 
     @Test("Image processing fallback passes raw bytes when extension lacks export")
     func imageProcessingFallback() async throws {
-        let payloadDir = resolvePath("Reference/AidokuRunner/Tests/AidokuRunnerTests/Resources/Payload")
+        let payloadDir = resolvePayloadDir()
         guard FileManager.default.fileExists(atPath: payloadDir.path) else { return }
 
         let session = try await SourceSession(url: payloadDir)
@@ -244,7 +254,7 @@ struct UpstreamCompatibilityTests {
 
     @Test("Thread-safe concurrent execution across multiple async tasks on SourceSession")
     func threadSafeConcurrentSessionExecution() async throws {
-        let payloadDir = resolvePath("Reference/AidokuRunner/Tests/AidokuRunnerTests/Resources/Payload")
+        let payloadDir = resolvePayloadDir()
         guard FileManager.default.fileExists(atPath: payloadDir.path) else { return }
 
         let session = try await SourceSession(url: payloadDir)

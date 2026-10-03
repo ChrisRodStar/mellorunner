@@ -63,7 +63,7 @@ struct SourceSessionTests {
 
     @Test("Instantiate SourceSession from upstream 96KB Rust payload.wasm")
     func instantiateSessionFromUpstreamPayload() async throws {
-        let wasmURL = resolvePath("Reference/AidokuRunner/Tests/AidokuRunnerTests/Resources/Payload/main.wasm")
+        let wasmURL = resolvePath("Tests/MelloRunnerTests/Fixtures/Payload/main.wasm")
         guard FileManager.default.fileExists(atPath: wasmURL.path) else { return }
 
         let wasmBytes = try Data(contentsOf: wasmURL)
