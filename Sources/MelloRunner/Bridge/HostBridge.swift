@@ -79,6 +79,11 @@ public actor HostBridge {
         )
     }
 
+    /// Check if the WebAssembly module exports a function with the specified name.
+    public func hasExport(_ name: String) async -> Bool {
+        await session.hasExport(name)
+    }
+
     /// Invoke an exported WebAssembly function by name.
     @discardableResult
     public func invoke(
@@ -117,19 +122,19 @@ public actor HostBridge {
 
     /// Store data in the resource store and return its descriptor handle.
     @discardableResult
-    public func storeResource(_ data: Data) -> Int32 {
+    public nonisolated func storeResource(_ data: Data) -> Int32 {
         resourceStore.store(data)
     }
 
     /// Store a UTF-8 string in the resource store and return its descriptor handle.
     @discardableResult
-    public func storeResource(string: String) -> Int32 {
+    public nonisolated func storeResource(string: String) -> Int32 {
         resourceStore.store(string: string)
     }
 
     /// Remove a resource from the store by its descriptor handle.
     @discardableResult
-    public func removeResource(_ descriptor: Int32) -> Data? {
+    public nonisolated func removeResource(_ descriptor: Int32) -> Data? {
         resourceStore.remove(descriptor)
     }
 

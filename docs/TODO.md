@@ -58,11 +58,13 @@
   - Comprehensive unit test suites (76 tests in 12 suites pass in 0.072s with zero swift-format warnings).
   - Executed head-to-head release benchmark with zero regressions and recorded results in [`Benchmarks/Results/milestone-6.md`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Benchmarks/Results/milestone-6.md).
 
-- [ ] **Milestone 7: Public source session API (`Sources/`)**
-  - Package loader for `.wasm` binaries + `source.json` manifests.
-  - High-level `SourceSession` coordinating initialization, search (`getSearchMangaList`), details (`getMangaUpdate`), chapters, and pages.
-  - Capability discovery: inspecting optional exports (`get_home`, `get_filters`, `process_page_image`, etc.).
-  - Execute head-to-head benchmark and record results in `Benchmarks/Results/milestone-7.md`.
+- [x] **Milestone 7: Public source session API (`Package/`, `Session/`, `Models/`)**
+  - Implemented [`SourceManifest.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Models/SourceManifest.swift), [`SourceFeatures.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Models/SourceFeatures.swift), [`Home.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Models/Home.swift), [`DeepLinkResult.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Models/DeepLinkResult.swift), [`KeyKind.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Models/KeyKind.swift), and [`MangaWithChapter.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Models/MangaWithChapter.swift).
+  - Integrated Christopher's high-performance [`ZipMello`](https://github.com/ChrisRodStar/zipmello.git) engine (`ArchiveMemoryReader`) into [`AIXPackageReader.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Package/AIXPackageReader.swift) for safe, synchronous, CRC32-verified `.aix` archive decompression.
+  - Implemented immutable [`SourcePackage.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Package/SourcePackage.swift) loading `.aix` archives, raw archive data, and directories with static filters and settings decoding.
+  - Implemented high-level thread-safe coordinator [`SourceSession.swift`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Sources/MelloRunner/Session/SourceSession.swift) with automatic export capability discovery, static/dynamic listings/filters/settings merging, and search/chapter/update/page/auth operations.
+  - Comprehensive unit test suites (87 tests across 15 suites pass in 0.152s with zero compiler warnings and zero swift-format warnings).
+  - Executed head-to-head release benchmark against AidokuRunner, proving MelloRunner with ZipMello is **1.37x faster** on cold session initialization (565.49 µs vs 774.35 µs, even including live in-memory archive decompression!) and **1.11x faster** on high-level listings execution; recorded results in [`Benchmarks/Results/milestone-7.md`](file:///Users/chris/Desktop/Workspace/IdeasTo/mellorunner/Benchmarks/Results/milestone-7.md).
 
 - [ ] **Milestone 8: Upstream extension compatibility verification**
   - Load the reference upstream binary (`Reference/AidokuRunner/Tests/AidokuRunnerTests/Resources/Payload/main.wasm`).

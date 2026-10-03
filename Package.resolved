@@ -1,5 +1,5 @@
 {
-  "originHash" : "bc8812b55a1e94520c7a55ce8e188deb3aa18cd30de0299341520454b15712ff",
+  "originHash" : "e14e44ac3b0992e2e425def96058d71e3f0108282b1eec6bbaae443c5429dc94",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
@@ -20,6 +20,15 @@
       }
     },
     {
+      "identity" : "swift-system",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-system",
+      "state" : {
+        "revision" : "0b30161977799fd949f7f6848586b82ff6764f73",
+        "version" : "1.6.6"
+      }
+    },
+    {
       "identity" : "swiftsoup",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup.git",
@@ -35,6 +44,15 @@
       "state" : {
         "revision" : "a0471eaee817c523b8023d8ebb1c70ff70b7950a",
         "version" : "0.4.1"
+      }
+    },
+    {
+      "identity" : "zipmello",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChrisRodStar/zipmello.git",
+      "state" : {
+        "revision" : "f6e1f5d066a2c211afebb482aea2f3fde25371a6",
+        "version" : "1.0.0"
       }
     }
   ],
