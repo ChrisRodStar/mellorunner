@@ -196,20 +196,28 @@ public final class NetworkImports: @unchecked Sendable {
             }
         )
 
-        // 6. net.set_rate_limit(requests: i32, period: i32) -> i32
+        // 6. net.set_rate_limit(permits: i32, period: i32, unit: i32) -> ()
         imports.define(
             module: "net",
             name: "set_rate_limit",
-            Function(store: store, type: FunctionType(parameters: [.i32, .i32], results: [.i32])) {
+            Function(store: store, type: FunctionType(parameters: [.i32, .i32, .i32], results: [])) {
                 [weak self] _, args in
-                guard let self else { return [.i32(UInt32(bitPattern: NetResult.invalidDescriptor.rawValue))] }
-                let requests = Int(Int32(bitPattern: args[0].i32))
-                let period = Double(Int32(bitPattern: args[1].i32))
+                guard let self else { return [] }
+                let permits = Int(Int32(bitPattern: args[0].i32))
+                let periodVal = Double(Int32(bitPattern: args[1].i32))
+                let unitRaw = Int32(bitPattern: args[2].i32)
+                let multiplier: Double =
+                    switch unitRaw {
+                        case 1: 60.0
+                        case 2: 3600.0
+                        default: 1.0
+                    }
+                let totalPeriod = periodVal * multiplier
 
                 Task {
-                    await self.rateLimiter.setRateLimit(requests: requests, period: period)
+                    await self.rateLimiter.setRateLimit(requests: permits, period: totalPeriod)
                 }
-                return [.i32(UInt32(bitPattern: NetResult.success.rawValue))]
+                return []
             }
         )
 

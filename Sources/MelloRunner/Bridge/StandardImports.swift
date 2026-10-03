@@ -133,6 +133,33 @@ public final class StandardImports: @unchecked Sendable {
             }
         )
 
+        // 7. std.print(offset: i32, length: i32)
+        imports.define(
+            module: "std",
+            name: "print",
+            Function(store: store, type: FunctionType(parameters: [.i32, .i32], results: [])) {
+                [weak self] caller, args in
+                guard let self, let memory = self.getMemory(from: caller) else { return [] }
+                if let message = self.readString(from: memory, offset: args[0].i32, length: args[1].i32) {
+                    if let handler = self.printHandler {
+                        handler(message)
+                    } else {
+                        print("[Wasm Extension] \(message)")
+                    }
+                }
+                return []
+            }
+        )
+
+        // 8. std.abort()
+        imports.define(
+            module: "std",
+            name: "abort",
+            Function(store: store, type: FunctionType(parameters: [], results: [])) { _, _ in
+                []
+            }
+        )
+
         // MARK: - "env" Namespace
         // 1. env.abort()
         imports.define(
