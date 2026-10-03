@@ -1,5 +1,6 @@
 import Foundation
 import WasmKit
+import os
 
 /// High-level coordinator managing an instantiated source extension session.
 ///
@@ -22,10 +23,16 @@ public final class SourceSession: Sendable {
     /// Static in-app settings declared in `settings.json`.
     public let staticSettings: [Setting]
 
-    /// Underlying bridge managing the WebAssembly virtual machine and host import tables.
-    public let bridge: HostBridge
-
+    private let bridgeHolder: OSAllocatedUnfairLock<HostBridge>
+    private let accumulatedHome: OSAllocatedUnfairLock<Home?>
+    private let configuration: SourceSessionConfiguration
     private let encoder: PostcardEncoder
+    private let decoder: PostcardDecoder
+
+    /// Underlying bridge managing the WebAssembly virtual machine and host import tables.
+    public var bridge: HostBridge {
+        bridgeHolder.withLock { $0 }
+    }
 
     // MARK: - Synchronous Metadata Accessors
 
@@ -130,10 +137,20 @@ public final class SourceSession: Sendable {
         configuration: SourceSessionConfiguration = .init()
     ) async throws {
         self.package = package
+        self.configuration = configuration
         self.staticListings = package.manifest.listings ?? []
         self.staticFilters = package.decodeStaticFilters()
         self.staticSettings = package.decodeStaticSettings()
         self.encoder = PostcardEncoder()
+        self.decoder = PostcardDecoder()
+        let homeHolder = OSAllocatedUnfairLock<Home?>(initialState: nil)
+        self.accumulatedHome = homeHolder
+
+        let partialHandler = Self.makePartialHandler(
+            configuration: configuration,
+            sessionKey: package.manifest.info.id,
+            accumulatedHome: homeHolder
+        )
 
         let bridge = try HostBridge(
             wasmBytes: package.wasmBytes,
@@ -144,10 +161,10 @@ public final class SourceSession: Sendable {
             settingsStore: configuration.settingsStore,
             settingsNamespace: package.manifest.info.id,
             printHandler: configuration.printHandler,
-            partialResultHandler: configuration.partialResultHandler,
+            partialResultHandler: partialHandler,
             additionalImports: configuration.additionalImports
         )
-        self.bridge = bridge
+        self.bridgeHolder = OSAllocatedUnfairLock(initialState: bridge)
 
         // Discover features from exports
         self.features = await SourceFeatures.discover(from: bridge)
@@ -165,6 +182,76 @@ public final class SourceSession: Sendable {
     ) async throws {
         let package = try SourcePackage.load(from: url)
         try await self.init(package: package, configuration: configuration)
+    }
+
+    // MARK: - Lifecycle & Restart
+
+    /// Restarts the WebAssembly runtime environment, resetting state and clearing caches.
+    public func restart() async throws {
+        let oldBridge = bridge
+        await oldBridge.close()
+
+        accumulatedHome.withLock { $0 = nil }
+        let partialHandler = Self.makePartialHandler(
+            configuration: configuration,
+            sessionKey: key,
+            accumulatedHome: accumulatedHome
+        )
+
+        let newBridge = try HostBridge(
+            wasmBytes: package.wasmBytes,
+            engine: configuration.engine,
+            maximumBytes: configuration.maximumBytes,
+            transport: configuration.transport,
+            rateLimiter: configuration.rateLimiter,
+            settingsStore: configuration.settingsStore,
+            settingsNamespace: package.manifest.info.id,
+            printHandler: configuration.printHandler,
+            partialResultHandler: partialHandler,
+            additionalImports: configuration.additionalImports
+        )
+        bridgeHolder.withLock { $0 = newBridge }
+
+        if await newBridge.hasExport("start") {
+            _ = try await newBridge.invoke("start")
+        }
+    }
+
+    private static func makePartialHandler(
+        configuration: SourceSessionConfiguration,
+        sessionKey: String,
+        accumulatedHome: OSAllocatedUnfairLock<Home?>
+    ) -> @Sendable (Data) -> Void {
+        return { data in
+            configuration.partialResultHandler?(data)
+            guard let partial = try? PostcardDecoder().decode(HomePartialResult.self, from: data) else { return }
+            switch partial {
+                case .layout(var home):
+                    home.setSourceKey(sessionKey)
+                    let finalHome = home
+                    accumulatedHome.withLock { $0 = finalHome }
+                    configuration.partialHomeHandler?(finalHome)
+                case .component(var component):
+                    component.setSourceKey(sessionKey)
+                    let finalComponent = component
+                    let currentHome = accumulatedHome.withLock { home in
+                        if var existing = home {
+                            if let idx = existing.components.firstIndex(where: { $0.title == finalComponent.title }) {
+                                existing.components[idx] = finalComponent
+                            } else {
+                                existing.components.append(finalComponent)
+                            }
+                            home = existing
+                            return existing
+                        } else {
+                            let newHome = Home(components: [finalComponent])
+                            home = newHome
+                            return newHome
+                        }
+                    }
+                    configuration.partialHomeHandler?(currentHome)
+            }
+        }
     }
 
     // MARK: - Listings, Filters, and Settings
@@ -282,12 +369,16 @@ public final class SourceSession: Sendable {
 
     /// Fetches the dynamic home feed layout and components.
     public func getHome() async throws -> Home {
+        accumulatedHome.withLock { $0 = nil }
         var home = try await bridge.invokeAndDecode(Home.self, export: "get_home")
         home.setSourceKey(key)
+        if home.components.isEmpty, let streamed = accumulatedHome.withLock({ $0 }) {
+            return streamed
+        }
         return home
     }
 
-    // MARK: - Image and Request Helpers
+    // MARK: - Image Processing and Requests
 
     /// Formats a custom HTTP request for an image URL with extension-specific headers/auth.
     public func getImageRequest(url: String, context: PageContext? = nil) async throws -> URLRequest {
@@ -321,6 +412,84 @@ public final class SourceSession: Sendable {
             throw RuntimeError.trap("Image request descriptor \(requestPtr) could not be resolved to URLRequest")
         }
         return urlRequest
+    }
+
+    /// Processes a chapter page image if the extension supports `process_page_image`.
+    ///
+    /// - Parameters:
+    ///   - data: Raw bytes of the image response.
+    ///   - url: URL of the fetched image.
+    ///   - headers: Response HTTP headers.
+    ///   - statusCode: Response HTTP status code.
+    ///   - context: Optional chapter page context.
+    /// - Returns: Processed image raw bytes, or nil if unprocessed.
+    public func processPageImage(
+        data: Data,
+        url: URL? = nil,
+        headers: [String: String] = [:],
+        statusCode: Int = 200,
+        context: PageContext? = nil
+    ) async throws -> Data? {
+        guard features.processesPages else { return data }
+
+        let imageDescriptor = bridge.storeResource(data)
+        defer { bridge.removeResource(imageDescriptor) }
+
+        let request = ImageRequest(url: url, headers: [:])
+        let response = ImageResponse(code: statusCode, headers: headers, request: request, image: imageDescriptor)
+        let responseData = try encoder.encode(response)
+        let responsePtr = bridge.storeResource(responseData)
+        defer { bridge.removeResource(responsePtr) }
+
+        let contextPtr: Int32
+        if let context {
+            let contextData = try encoder.encode(context)
+            contextPtr = bridge.storeResource(contextData)
+        } else {
+            contextPtr = -1
+        }
+        defer {
+            if contextPtr >= 0 {
+                bridge.removeResource(contextPtr)
+            }
+        }
+
+        let resultImageRef = try await bridge.invokeAndDecode(
+            Int32.self,
+            export: "process_page_image",
+            arguments: [.i32(responsePtr), .i32(contextPtr)]
+        )
+        defer { bridge.removeResource(resultImageRef) }
+
+        return bridge.resourceStore.fetch(resultImageRef)
+    }
+
+    /// Processes a manga cover image if the extension supports `process_cover_image`.
+    public func processCoverImage(
+        data: Data,
+        url: URL? = nil,
+        headers: [String: String] = [:],
+        statusCode: Int = 200
+    ) async throws -> Data? {
+        guard features.processesCovers else { return data }
+
+        let imageDescriptor = bridge.storeResource(data)
+        defer { bridge.removeResource(imageDescriptor) }
+
+        let request = ImageRequest(url: url, headers: [:])
+        let response = ImageResponse(code: statusCode, headers: headers, request: request, image: imageDescriptor)
+        let responseData = try encoder.encode(response)
+        let responsePtr = bridge.storeResource(responseData)
+        defer { bridge.removeResource(responsePtr) }
+
+        let resultImageRef = try await bridge.invokeAndDecode(
+            Int32.self,
+            export: "process_cover_image",
+            arguments: [.i32(responsePtr)]
+        )
+        defer { bridge.removeResource(resultImageRef) }
+
+        return bridge.resourceStore.fetch(resultImageRef)
     }
 
     /// Queries the extension for its current base URL.

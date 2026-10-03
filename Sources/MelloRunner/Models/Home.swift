@@ -107,135 +107,96 @@ public struct HomeComponent: Sendable, Codable, Hashable {
 }
 
 extension HomeComponent.Value: Codable {
-    private enum CodingKeys: String, CodingKey {
-        case type
-        case links
-        case entries
-        case autoScrollInterval
-        case width
-        case height
-        case listing
-        case ranking
-        case pageSize
-        case filters
+    private enum CodingKeys: CodingKey {
+        case key
     }
 
     public init(from decoder: any Decoder) throws {
-        let unkeyed = try? decoder.unkeyedContainer()
-        if var unkeyed {
-            let disc = try unkeyed.decode(UInt8.self)
-            switch disc {
-                case 0:
-                    let links = try unkeyed.decode([HomeLink].self)
-                    let autoScroll = try unkeyed.decodeIfPresent(Float.self).flatMap { TimeInterval($0) }
-                    let width = try unkeyed.decodeIfPresent(Int.self)
-                    let height = try unkeyed.decodeIfPresent(Int.self)
-                    self = .imageScroller(links: links, autoScrollInterval: autoScroll, width: width, height: height)
-                case 1:
-                    let entries = try unkeyed.decode([Manga].self)
-                    let autoScroll = try unkeyed.decodeIfPresent(Float.self).flatMap { TimeInterval($0) }
-                    self = .bigScroller(entries: entries, autoScrollInterval: autoScroll)
-                case 2:
-                    let entries = try unkeyed.decode([HomeLink].self)
-                    let listing = try unkeyed.decodeIfPresent(Listing.self)
-                    self = .scroller(entries: entries, listing: listing)
-                case 3:
-                    let ranking = try unkeyed.decode(Bool.self)
-                    let pageSize = try unkeyed.decodeIfPresent(Int.self)
-                    let entries = try unkeyed.decode([HomeLink].self)
-                    let listing = try unkeyed.decodeIfPresent(Listing.self)
-                    self = .mangaList(ranking: ranking, pageSize: pageSize, entries: entries, listing: listing)
-                case 4:
-                    let pageSize = try unkeyed.decodeIfPresent(Int.self)
-                    let entries = try unkeyed.decode([MangaWithChapter].self)
-                    let listing = try unkeyed.decodeIfPresent(Listing.self)
-                    self = .mangaChapterList(pageSize: pageSize, entries: entries, listing: listing)
-                case 5:
-                    let filters = try unkeyed.decode([HomeFilterItem].self)
-                    self = .filters(filters)
-                case 6:
-                    let links = try unkeyed.decode([HomeLink].self)
-                    self = .links(links)
-                default:
-                    throw DecodingError.dataCorruptedError(
-                        in: unkeyed,
-                        debugDescription: "Unknown HomeComponent.Value discriminant: \(disc)"
-                    )
-            }
-            return
-        }
-
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(String.self, forKey: .type)
+        let type = try container.decode(UInt8.self, forKey: .key)
         switch type {
-            case "imageScroller":
-                let links = try container.decode([HomeLink].self, forKey: .links)
-                let autoScroll = try container.decodeIfPresent(TimeInterval.self, forKey: .autoScrollInterval)
-                let width = try container.decodeIfPresent(Int.self, forKey: .width)
-                let height = try container.decodeIfPresent(Int.self, forKey: .height)
-                self = .imageScroller(links: links, autoScrollInterval: autoScroll, width: width, height: height)
-            case "bigScroller":
-                let entries = try container.decode([Manga].self, forKey: .entries)
-                let autoScroll = try container.decodeIfPresent(TimeInterval.self, forKey: .autoScrollInterval)
-                self = .bigScroller(entries: entries, autoScrollInterval: autoScroll)
-            case "scroller":
-                let entries = try container.decode([HomeLink].self, forKey: .entries)
-                let listing = try container.decodeIfPresent(Listing.self, forKey: .listing)
+            case 0:
+                let links = try container.decode([HomeLink].self, forKey: .key)
+                let autoScrollInterval =
+                    try container
+                    .decodeIfPresent(Float.self, forKey: .key)
+                    .map(TimeInterval.init)
+                let width = try container.decodeIfPresent(Int.self, forKey: .key)
+                let height = try container.decodeIfPresent(Int.self, forKey: .key)
+                self = .imageScroller(
+                    links: links,
+                    autoScrollInterval: autoScrollInterval,
+                    width: width,
+                    height: height
+                )
+            case 1:
+                let entries = try container.decode([Manga].self, forKey: .key)
+                let autoScrollInterval = try container.decodeIfPresent(
+                    Float.self,
+                    forKey: .key
+                ).map(TimeInterval.init)
+                self = .bigScroller(
+                    entries: entries,
+                    autoScrollInterval: autoScrollInterval
+                )
+            case 2:
+                let entries = try container.decode([HomeLink].self, forKey: .key)
+                let listing = try container.decodeIfPresent(Listing.self, forKey: .key)
                 self = .scroller(entries: entries, listing: listing)
-            case "mangaList":
-                let ranking = (try? container.decode(Bool.self, forKey: .ranking)) ?? false
-                let pageSize = try container.decodeIfPresent(Int.self, forKey: .pageSize)
-                let entries = try container.decode([HomeLink].self, forKey: .entries)
-                let listing = try container.decodeIfPresent(Listing.self, forKey: .listing)
+            case 3:
+                let ranking = try container.decode(Bool.self, forKey: .key)
+                let pageSize = try container.decodeIfPresent(Int.self, forKey: .key)
+                let entries = try container.decode([HomeLink].self, forKey: .key)
+                let listing = try container.decodeIfPresent(Listing.self, forKey: .key)
                 self = .mangaList(ranking: ranking, pageSize: pageSize, entries: entries, listing: listing)
-            case "mangaChapterList":
-                let pageSize = try container.decodeIfPresent(Int.self, forKey: .pageSize)
-                let entries = try container.decode([MangaWithChapter].self, forKey: .entries)
-                let listing = try container.decodeIfPresent(Listing.self, forKey: .listing)
+            case 4:
+                let pageSize = try container.decodeIfPresent(Int.self, forKey: .key)
+                let entries = try container.decode([MangaWithChapter].self, forKey: .key)
+                let listing = try container.decodeIfPresent(Listing.self, forKey: .key)
                 self = .mangaChapterList(pageSize: pageSize, entries: entries, listing: listing)
-            case "filters":
-                let filters = try container.decode([HomeFilterItem].self, forKey: .filters)
+            case 5:
+                let filters = try container.decode([HomeFilterItem].self, forKey: .key)
                 self = .filters(filters)
-            case "links":
-                let links = try container.decode([HomeLink].self, forKey: .links)
+            case 6:
+                let links = try container.decode([HomeLink].self, forKey: .key)
                 self = .links(links)
             default:
                 throw DecodingError.dataCorruptedError(
-                    forKey: .type,
+                    forKey: .key,
                     in: container,
-                    debugDescription: "Unknown HomeComponent type: \(type)"
+                    debugDescription: "Invalid HomeComponent.Value discriminant: \(type)"
                 )
         }
     }
 
     public func encode(to encoder: any Encoder) throws {
-        var unkeyed = encoder.unkeyedContainer()
-        try unkeyed.encode(discriminant)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(UInt8(discriminant), forKey: .key)
         switch self {
-            case .imageScroller(let links, let autoScroll, let width, let height):
-                try unkeyed.encode(links)
-                try unkeyed.encode(autoScroll.flatMap(Float.init))
-                try unkeyed.encode(width)
-                try unkeyed.encode(height)
-            case .bigScroller(let entries, let autoScroll):
-                try unkeyed.encode(entries)
-                try unkeyed.encode(autoScroll.flatMap(Float.init))
+            case .imageScroller(let links, let autoScrollInterval, let width, let height):
+                try container.encode(links, forKey: .key)
+                try container.encodeIfPresent(autoScrollInterval.flatMap(Float.init), forKey: .key)
+                try container.encodeIfPresent(width, forKey: .key)
+                try container.encodeIfPresent(height, forKey: .key)
+            case .bigScroller(let entries, let autoScrollInterval):
+                try container.encode(entries, forKey: .key)
+                try container.encodeIfPresent(autoScrollInterval.flatMap(Float.init), forKey: .key)
             case .scroller(let entries, let listing):
-                try unkeyed.encode(entries)
-                try unkeyed.encode(listing)
+                try container.encode(entries, forKey: .key)
+                try container.encodeIfPresent(listing, forKey: .key)
             case .mangaList(let ranking, let pageSize, let entries, let listing):
-                try unkeyed.encode(ranking)
-                try unkeyed.encode(pageSize)
-                try unkeyed.encode(entries)
-                try unkeyed.encode(listing)
+                try container.encode(ranking, forKey: .key)
+                try container.encodeIfPresent(pageSize, forKey: .key)
+                try container.encode(entries, forKey: .key)
+                try container.encodeIfPresent(listing, forKey: .key)
             case .mangaChapterList(let pageSize, let entries, let listing):
-                try unkeyed.encode(pageSize)
-                try unkeyed.encode(entries)
-                try unkeyed.encode(listing)
+                try container.encodeIfPresent(pageSize, forKey: .key)
+                try container.encode(entries, forKey: .key)
+                try container.encodeIfPresent(listing, forKey: .key)
             case .filters(let filters):
-                try unkeyed.encode(filters)
+                try container.encode(filters, forKey: .key)
             case .links(let links):
-                try unkeyed.encode(links)
+                try container.encode(links, forKey: .key)
         }
     }
 }
@@ -284,50 +245,83 @@ public enum HomeLinkValue: Sendable, Codable, Hashable {
     case listing(Listing)
     case manga(Manga)
 
-    public init(from decoder: any Decoder) throws {
-        let unkeyed = try? decoder.unkeyedContainer()
-        if var unkeyed {
-            let disc = try unkeyed.decode(UInt8.self)
-            switch disc {
-                case 0: self = .url(try unkeyed.decode(String.self))
-                case 1: self = .listing(try unkeyed.decode(Listing.self))
-                case 2: self = .manga(try unkeyed.decode(Manga.self))
-                default:
-                    throw DecodingError.dataCorruptedError(
-                        in: unkeyed,
-                        debugDescription: "Unknown HomeLinkValue discriminant: \(disc)"
-                    )
-            }
-            return
-        }
+    private enum CodingKeys: CodingKey {
+        case key
+    }
 
-        let container = try decoder.singleValueContainer()
-        if let manga = try? container.decode(Manga.self) {
-            self = .manga(manga)
-        } else if let listing = try? container.decode(Listing.self) {
-            self = .listing(listing)
-        } else if let url = try? container.decode(String.self) {
-            self = .url(url)
-        } else {
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Cannot decode HomeLinkValue"
-            )
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(UInt8.self, forKey: .key)
+        switch type {
+            case 0:
+                let value = try container.decode(String.self, forKey: .key)
+                self = .url(value)
+            case 1:
+                let value = try container.decode(Listing.self, forKey: .key)
+                self = .listing(value)
+            case 2:
+                let value = try container.decode(Manga.self, forKey: .key)
+                self = .manga(value)
+            default:
+                throw DecodingError.dataCorruptedError(
+                    forKey: .key,
+                    in: container,
+                    debugDescription: "Unknown HomeLinkValue discriminant: \(type)"
+                )
         }
     }
 
     public func encode(to encoder: any Encoder) throws {
-        var unkeyed = encoder.unkeyedContainer()
+        var container = encoder.container(keyedBy: CodingKeys.self)
         switch self {
-            case .url(let url):
-                try unkeyed.encode(UInt8(0))
-                try unkeyed.encode(url)
-            case .listing(let listing):
-                try unkeyed.encode(UInt8(1))
-                try unkeyed.encode(listing)
-            case .manga(let manga):
-                try unkeyed.encode(UInt8(2))
-                try unkeyed.encode(manga)
+            case .url(let value):
+                try container.encode(UInt8(0), forKey: .key)
+                try container.encode(value, forKey: .key)
+            case .listing(let value):
+                try container.encode(UInt8(1), forKey: .key)
+                try container.encode(value, forKey: .key)
+            case .manga(let value):
+                try container.encode(UInt8(2), forKey: .key)
+                try container.encode(value, forKey: .key)
+        }
+    }
+}
+
+/// Partial result streamed from an extension during home feed evaluation.
+public enum HomePartialResult: Sendable, Codable, Hashable {
+    case layout(Home)
+    case component(HomeComponent)
+
+    private enum CodingKeys: CodingKey {
+        case key
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(UInt8.self, forKey: .key)
+        switch type {
+            case 0:
+                self = .layout(try container.decode(Home.self, forKey: .key))
+            case 1:
+                self = .component(try container.decode(HomeComponent.self, forKey: .key))
+            default:
+                throw DecodingError.dataCorruptedError(
+                    forKey: .key,
+                    in: container,
+                    debugDescription: "Unknown HomePartialResult discriminant: \(type)"
+                )
+        }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+            case .layout(let home):
+                try container.encode(UInt8(0), forKey: .key)
+                try container.encode(home, forKey: .key)
+            case .component(let component):
+                try container.encode(UInt8(1), forKey: .key)
+                try container.encode(component, forKey: .key)
         }
     }
 }

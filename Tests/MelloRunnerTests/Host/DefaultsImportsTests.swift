@@ -47,7 +47,7 @@ struct DefaultsImportsTests {
 
         let wasmStore = Store(engine: Engine())
         let imports = defaults.makeImports(store: wasmStore)
-        #expect(imports != nil)
+        _ = imports
 
         #expect(settingsStore.string(forKey: "my_source.api_key") == "secret_123")
         #expect(settingsStore.bool(forKey: "my_source.enabled") == true)

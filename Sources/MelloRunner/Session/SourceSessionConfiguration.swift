@@ -21,8 +21,11 @@ public struct SourceSessionConfiguration: Sendable {
     /// Optional closure receiving diagnostic or debug print lines from the extension.
     public var printHandler: (@Sendable (String) -> Void)?
 
-    /// Optional closure receiving intermediate partial results (e.g. streaming home feed updates).
+    /// Optional closure receiving intermediate partial results (e.g. streaming raw bytes).
     public var partialResultHandler: (@Sendable (Data) -> Void)?
+
+    /// Optional closure receiving intermediate streaming home feed updates.
+    public var partialHomeHandler: (@Sendable (Home) -> Void)?
 
     /// Optional hook to link additional WebAssembly host imports into the store.
     public var additionalImports: (@Sendable (Store, inout Imports) -> Void)?
@@ -35,6 +38,7 @@ public struct SourceSessionConfiguration: Sendable {
         settingsStore: any SettingsStore = InMemorySettingsStore(),
         printHandler: (@Sendable (String) -> Void)? = nil,
         partialResultHandler: (@Sendable (Data) -> Void)? = nil,
+        partialHomeHandler: (@Sendable (Home) -> Void)? = nil,
         additionalImports: (@Sendable (Store, inout Imports) -> Void)? = nil
     ) {
         self.engine = engine
@@ -44,6 +48,7 @@ public struct SourceSessionConfiguration: Sendable {
         self.settingsStore = settingsStore
         self.printHandler = printHandler
         self.partialResultHandler = partialResultHandler
+        self.partialHomeHandler = partialHomeHandler
         self.additionalImports = additionalImports
     }
 }
