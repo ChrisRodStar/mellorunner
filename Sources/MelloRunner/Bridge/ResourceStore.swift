@@ -68,6 +68,28 @@ public final class ResourceStore: @unchecked Sendable {
         }
     }
 
+    /// Stores both raw data buffer and an associated host object under the same descriptor.
+    ///
+    /// - Parameters:
+    ///   - data: The raw byte buffer to store.
+    ///   - object: The associated host object reference to retain.
+    /// - Returns: A positive `Int32` descriptor handle identifying the resource and object.
+    @discardableResult
+    public func store(data: Data, object: Any) -> Int32 {
+        let box = UncheckedSendableBox(object)
+        return lock.withLock { state in
+            let descriptor = state.nextDescriptor
+            state.resources[descriptor] = data
+            state.objects[descriptor] = box
+            if state.nextDescriptor == Int32.max {
+                state.nextDescriptor = 1
+            } else {
+                state.nextDescriptor += 1
+            }
+            return descriptor
+        }
+    }
+
     /// Fetches an object reference associated with a descriptor, cast to type `T`.
     ///
     /// - Parameter descriptor: The descriptor handle to look up.

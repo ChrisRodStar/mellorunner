@@ -65,6 +65,20 @@ struct JavaScriptImportsTests {
         #expect(decoded.isSecure == true)
         #expect(decoded.isHTTPOnly == true)
         #expect(decoded.expiresDate?.timeIntervalSince1970 == 1_700_000_000)
+
+        // Postcard binary serialization round-trip (Option<i64> wire parity)
+        let postcardEncoder = PostcardEncoder()
+        let postcardData = try postcardEncoder.encode(cookie)
+        let postcardDecoded = try PostcardDecoder().decode(Cookie.self, from: postcardData)
+
+        #expect(postcardDecoded == cookie)
+        #expect(postcardDecoded.expiresDate?.timeIntervalSince1970 == 1_700_000_000)
+
+        let cookieNoExpiry = Cookie(name: "session_id", value: "xyz123", expiresDate: nil)
+        let noExpiryData = try postcardEncoder.encode(cookieNoExpiry)
+        let noExpiryDecoded = try PostcardDecoder().decode(Cookie.self, from: noExpiryData)
+        #expect(noExpiryDecoded.expiresDate == nil)
+        #expect(noExpiryDecoded == cookieNoExpiry)
     }
 
     @Test("JavaScriptImports registers js module in Store")

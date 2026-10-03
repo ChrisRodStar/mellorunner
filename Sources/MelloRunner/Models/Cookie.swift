@@ -52,8 +52,8 @@ public struct Cookie: Sendable, Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.name = try container.decode(String.self, forKey: .name)
         self.value = try container.decode(String.self, forKey: .value)
-        if let timestamp = try container.decodeIfPresent(Double.self, forKey: .expiresDate) {
-            self.expiresDate = Date(timeIntervalSince1970: timestamp)
+        if let timestamp = try container.decodeIfPresent(Int64.self, forKey: .expiresDate) {
+            self.expiresDate = Date(timeIntervalSince1970: TimeInterval(timestamp))
         } else {
             self.expiresDate = nil
         }
@@ -67,7 +67,8 @@ public struct Cookie: Sendable, Codable, Equatable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
         try container.encode(value, forKey: .value)
-        try container.encodeIfPresent(expiresDate?.timeIntervalSince1970, forKey: .expiresDate)
+        let epochSeconds = expiresDate.map { Int64($0.timeIntervalSince1970) }
+        try container.encodeIfPresent(epochSeconds, forKey: .expiresDate)
         try container.encode(domain, forKey: .domain)
         try container.encode(path, forKey: .path)
         try container.encode(isSecure, forKey: .isSecure)

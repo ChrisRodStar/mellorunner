@@ -429,9 +429,12 @@ public final class NetworkImports: @unchecked Sendable {
                     return [.i32(UInt32(bitPattern: NetResult.invalidDescriptor.rawValue))]
                 }
                 guard let data = request.responseData else {
+                    return [.i32(UInt32(bitPattern: NetResult.missingData.rawValue))]
+                }
+                guard let image = PlatformImage(data: data) else {
                     return [.i32(UInt32(bitPattern: NetResult.notAnImage.rawValue))]
                 }
-                let imageDescriptor = self.resourceStore.store(data)
+                let imageDescriptor = self.resourceStore.store(data: data, object: image)
                 return [.i32(UInt32(bitPattern: imageDescriptor))]
             }
         )
